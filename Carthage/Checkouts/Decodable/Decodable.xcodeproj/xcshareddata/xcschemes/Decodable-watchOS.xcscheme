@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2E5481421BB1281100212D62"
-               BuildableName = "OAuth2.framework"
-               BlueprintName = "OAuth2"
-               ReferencedContainer = "container:OAuth2.xcodeproj">
+               BlueprintIdentifier = "D0DC546E1B7814D200F79CB0"
+               BuildableName = "Decodable.framework"
+               BlueprintName = "Decodable-watchOS"
+               ReferencedContainer = "container:Decodable.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -28,26 +28,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2E54814C1BB1281100212D62"
-               BuildableName = "OAuth2Tests.xctest"
-               BlueprintName = "OAuth2Tests"
-               ReferencedContainer = "container:OAuth2.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
-            BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
-            ReferencedContainer = "container:OAuth2.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
@@ -64,10 +45,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
-            BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
-            ReferencedContainer = "container:OAuth2.xcodeproj">
+            BlueprintIdentifier = "D0DC546E1B7814D200F79CB0"
+            BuildableName = "Decodable.framework"
+            BlueprintName = "Decodable-watchOS"
+            ReferencedContainer = "container:Decodable.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -82,10 +63,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
-            BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
-            ReferencedContainer = "container:OAuth2.xcodeproj">
+            BlueprintIdentifier = "D0DC546E1B7814D200F79CB0"
+            BuildableName = "Decodable.framework"
+            BlueprintName = "Decodable-watchOS"
+            ReferencedContainer = "container:Decodable.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

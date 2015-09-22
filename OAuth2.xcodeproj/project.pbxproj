@@ -10,6 +10,8 @@
 		2E5481471BB1281100212D62 /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2E5481461BB1281100212D62 /* OAuth2.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2E54814E1BB1281100212D62 /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E5481431BB1281100212D62 /* OAuth2.framework */; settings = {ASSET_TAGS = (); }; };
 		2E5481531BB1281100212D62 /* OAuth2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481521BB1281100212D62 /* OAuth2Tests.swift */; };
+		2E54815E1BB12DD400212D62 /* OAuthRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E54815D1BB12DD400212D62 /* OAuthRequest.swift */; settings = {ASSET_TAGS = (); }; };
+		2E5481611BB1538B00212D62 /* Decodable.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E5481601BB1538B00212D62 /* Decodable.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,6 +31,8 @@
 		2E54814D1BB1281100212D62 /* OAuth2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OAuth2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E5481521BB1281100212D62 /* OAuth2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuth2Tests.swift; sourceTree = "<group>"; };
 		2E5481541BB1281100212D62 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2E54815D1BB12DD400212D62 /* OAuthRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OAuthRequest.swift; sourceTree = "<group>"; };
+		2E5481601BB1538B00212D62 /* Decodable.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Decodable.framework; path = Carthage/Build/iOS/Decodable.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E5481611BB1538B00212D62 /* Decodable.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,6 +58,7 @@
 		2E5481391BB1281100212D62 = {
 			isa = PBXGroup;
 			children = (
+				2E54815F1BB14CF500212D62 /* Frameworks */,
 				2E5481451BB1281100212D62 /* OAuth2 */,
 				2E5481511BB1281100212D62 /* OAuth2Tests */,
 				2E5481441BB1281100212D62 /* Products */,
@@ -72,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				2E5481461BB1281100212D62 /* OAuth2.h */,
+				2E54815D1BB12DD400212D62 /* OAuthRequest.swift */,
 				2E5481481BB1281100212D62 /* Info.plist */,
 			);
 			path = OAuth2;
@@ -84,6 +91,14 @@
 				2E5481541BB1281100212D62 /* Info.plist */,
 			);
 			path = OAuth2Tests;
+			sourceTree = "<group>";
+		};
+		2E54815F1BB14CF500212D62 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2E5481601BB1538B00212D62 /* Decodable.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -142,6 +157,7 @@
 		2E54813A1BB1281100212D62 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 0700;
 				LastUpgradeCheck = 0700;
 				ORGANIZATIONNAME = "Leon Breedt";
 				TargetAttributes = {
@@ -193,6 +209,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2E54815E1BB12DD400212D62 /* OAuthRequest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -307,26 +324,39 @@
 		2E5481581BB1281100212D62 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OAuth2/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.bitserf.OAuth2;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
 		};
 		2E5481591BB1281100212D62 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				DEFINES_MODULE = YES;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OAuth2/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";

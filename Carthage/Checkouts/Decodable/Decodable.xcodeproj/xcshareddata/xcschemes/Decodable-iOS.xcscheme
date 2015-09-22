@@ -14,49 +14,50 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2E5481421BB1281100212D62"
-               BuildableName = "OAuth2.framework"
-               BlueprintName = "OAuth2"
-               ReferencedContainer = "container:OAuth2.xcodeproj">
+               BlueprintIdentifier = "8FE7B5611B4C9FB900837609"
+               BuildableName = "Decodable.framework"
+               BlueprintName = "Decodable-iOS"
+               ReferencedContainer = "container:Decodable.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
-      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      codeCoverageEnabled = "YES"
+      buildConfiguration = "Debug">
       <Testables>
          <TestableReference
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2E54814C1BB1281100212D62"
-               BuildableName = "OAuth2Tests.xctest"
-               BlueprintName = "OAuth2Tests"
-               ReferencedContainer = "container:OAuth2.xcodeproj">
+               BlueprintIdentifier = "8FE7B56B1B4C9FB900837609"
+               BuildableName = "DecodableTests-iOS.xctest"
+               BlueprintName = "DecodableTests-iOS"
+               ReferencedContainer = "container:Decodable.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
-            BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
-            ReferencedContainer = "container:OAuth2.xcodeproj">
+            BlueprintIdentifier = "8FE7B5611B4C9FB900837609"
+            BuildableName = "Decodable.framework"
+            BlueprintName = "Decodable-iOS"
+            ReferencedContainer = "container:Decodable.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
+      buildConfiguration = "Debug"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -64,28 +65,28 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
-            BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
-            ReferencedContainer = "container:OAuth2.xcodeproj">
+            BlueprintIdentifier = "8FE7B5611B4C9FB900837609"
+            BuildableName = "Decodable.framework"
+            BlueprintName = "Decodable-iOS"
+            ReferencedContainer = "container:Decodable.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>
    <ProfileAction
-      buildConfiguration = "Release"
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
+      buildConfiguration = "Release"
       debugDocumentVersioning = "YES">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
-            BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
-            ReferencedContainer = "container:OAuth2.xcodeproj">
+            BlueprintIdentifier = "8FE7B5611B4C9FB900837609"
+            BuildableName = "Decodable.framework"
+            BlueprintName = "Decodable-iOS"
+            ReferencedContainer = "container:Decodable.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>
