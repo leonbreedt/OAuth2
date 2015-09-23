@@ -10,8 +10,10 @@
 		2E5481471BB1281100212D62 /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2E5481461BB1281100212D62 /* OAuth2.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2E54814E1BB1281100212D62 /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E5481431BB1281100212D62 /* OAuth2.framework */; settings = {ASSET_TAGS = (); }; };
 		2E5481531BB1281100212D62 /* OAuth2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481521BB1281100212D62 /* OAuth2Tests.swift */; };
-		2E54815E1BB12DD400212D62 /* OAuthRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E54815D1BB12DD400212D62 /* OAuthRequest.swift */; settings = {ASSET_TAGS = (); }; };
+		2E54815E1BB12DD400212D62 /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E54815D1BB12DD400212D62 /* OAuth2.swift */; settings = {ASSET_TAGS = (); }; };
 		2E5481611BB1538B00212D62 /* Decodable.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E5481601BB1538B00212D62 /* Decodable.framework */; };
+		2E5481631BB271BE00212D62 /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481621BB271BE00212D62 /* Request.swift */; settings = {ASSET_TAGS = (); }; };
+		2E5481651BB2745C00212D62 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481641BB2745C00212D62 /* Response.swift */; settings = {ASSET_TAGS = (); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,8 +33,10 @@
 		2E54814D1BB1281100212D62 /* OAuth2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OAuth2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E5481521BB1281100212D62 /* OAuth2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OAuth2Tests.swift; sourceTree = "<group>"; };
 		2E5481541BB1281100212D62 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2E54815D1BB12DD400212D62 /* OAuthRequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OAuthRequest.swift; sourceTree = "<group>"; };
+		2E54815D1BB12DD400212D62 /* OAuth2.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OAuth2.swift; sourceTree = "<group>"; };
 		2E5481601BB1538B00212D62 /* Decodable.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Decodable.framework; path = Carthage/Build/iOS/Decodable.framework; sourceTree = "<group>"; };
+		2E5481621BB271BE00212D62 /* Request.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
+		2E5481641BB2745C00212D62 /* Response.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Response.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -78,7 +82,9 @@
 			isa = PBXGroup;
 			children = (
 				2E5481461BB1281100212D62 /* OAuth2.h */,
-				2E54815D1BB12DD400212D62 /* OAuthRequest.swift */,
+				2E54815D1BB12DD400212D62 /* OAuth2.swift */,
+				2E5481621BB271BE00212D62 /* Request.swift */,
+				2E5481641BB2745C00212D62 /* Response.swift */,
 				2E5481481BB1281100212D62 /* Info.plist */,
 			);
 			path = OAuth2;
@@ -209,7 +215,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2E54815E1BB12DD400212D62 /* OAuthRequest.swift in Sources */,
+				2E54815E1BB12DD400212D62 /* OAuth2.swift in Sources */,
+				2E5481651BB2745C00212D62 /* Response.swift in Sources */,
+				2E5481631BB271BE00212D62 /* Request.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
