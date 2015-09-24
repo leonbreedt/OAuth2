@@ -18,27 +18,24 @@
 import Foundation
 import Decodable
 
+/// Handler called when an OAuth authentication request has completed.
 public typealias AuthenticationCompletionHandler = Response -> Void
 
-/// The entry point into perform OAuth 2.0 requests in this framework.
+/// The entry point into perform OAuth requests in this framework.
 public class OAuth2 {
-    private var session: NSURLSession
+    private let requestProcessor: URLRequestProcessor
     
     /// Initializes a new OAuth object.
     /// - Parameters:
-    ///   - session: The `NSURLSession` to use. If not specified, will create a new session using the
-    ///              default session configuration.
-    public init(session: NSURLSession? = nil) {
-        self.session = session ?? {
-            let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-            return NSURLSession(configuration: configuration)
-        }()
+    ///   - requestProcessor: The processor that will be used to make URL requests.
+    public init(requestProcessor: URLRequestProcessor? = nil) {
+        self.requestProcessor = requestProcessor ?? NSURLSessionRequestProcessor()
     }
     
-    /// Performs an OAuth 2.0 authentication request, calling a completion handler when the 
+    /// Performs an OAuth authentication request, calling a completion handler when the
     /// request has finished.
     /// - Parameters:
-    ///   - request: An OAuth 2.0 request to execute.
+    ///   - request: An OAuth request to execute.
     ///   - completion: The `AuthenticationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
     ///                 no notification of completion.
@@ -58,20 +55,20 @@ public class OAuth2 {
         
         // TODO: user hook for modifying request before it is sent.
         
-        let dataTask = session.dataTaskWithRequest(urlRequest) { data, urlResponse, error in
+        requestProcessor.process(urlRequest) { urlResponse, error, data in
             if error != nil {
                 completion?(.Failure(failure: .WithError(error: error!)))
             } else if data != nil && urlResponse != nil {
                 if let jsonString = NSString(data: data!, encoding: NSUTF8StringEncoding) as? String,
-                   let jsonObject = jsonString.jsonObject,
-                   let response = try? request.parseInitialJsonResponse(jsonObject) {
-                    
-                    // TODO: log response
-                    // TODO: user hook for extracting token and refresh token from response
-                    // TODO: parse JSON if no user hook
-                    print("response: \(response)")
-                    
-                    completion?(response)
+                    let jsonObject = jsonString.jsonObject,
+                    let response = try? request.parseInitialJsonResponse(jsonObject) {
+                        
+                        // TODO: log response
+                        // TODO: user hook for extracting token and refresh token from response
+                        // TODO: parse JSON if no user hook
+                        print("response: \(response)")
+                        
+                        completion?(response)
                 } else {
                     completion?(.Failure(failure: .WithReason(reason: "failed to parse response data")))
                 }
@@ -79,7 +76,6 @@ public class OAuth2 {
                 completion?(.Failure(failure: .WithReason(reason: "invalid response")))
             }
         }
-        dataTask.resume()
     }
 }
 
