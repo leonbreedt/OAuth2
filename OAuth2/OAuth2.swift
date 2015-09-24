@@ -60,8 +60,10 @@ public class OAuth2 {
                 completion?(.Failure(failure: .WithError(error: error!)))
             } else if data != nil && urlResponse != nil {
                 if let jsonString = NSString(data: data!, encoding: NSUTF8StringEncoding) as? String,
-                    let jsonObject = jsonString.jsonObject,
-                    let response = try? request.parseInitialJsonResponse(jsonObject) {
+                   let jsonObject = jsonString.jsonObject {
+                    
+                    do {
+                        let response = try request.parseInitialJsonResponse(jsonObject)
                         
                         // TODO: log response
                         // TODO: user hook for extracting token and refresh token from response
@@ -69,6 +71,9 @@ public class OAuth2 {
                         print("response: \(response)")
                         
                         completion?(response)
+                    } catch let error {
+                        completion?(.Failure(failure: .WithReason(reason: "failed to parse response data: \(error)")))
+                    }
                 } else {
                     completion?(.Failure(failure: .WithReason(reason: "failed to parse response data")))
                 }
@@ -107,8 +112,8 @@ extension AuthenticationData : Decodable {
     public static func decode(json: AnyObject) throws -> AuthenticationData {
         return try AuthenticationData(
             accessToken: json => "access_token",
-            refreshToken: json => "refresh_token",
-            expiresIn: json => "expires_in")
+            refreshToken: json =>? "refresh_token",
+            expiresIn: json =>? "expires_in")
     }
 }
 

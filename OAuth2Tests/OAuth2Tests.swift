@@ -15,32 +15,50 @@
 // limitations under the License.
 //
 
-
+import Foundation
 import XCTest
+
 @testable import OAuth2
 
-class OAuth2Tests: XCTestCase {
+class OAuth2Tests: XCTestCase, URLRequestProcessor {
+    var nextResponse: NSURLResponse?
+    var nextError: NSError?
+    var nextData: NSData?
     
-    override func setUp() {
-        super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+    func testClientCredentialsSuccessfulAuth() {
+        nextResponse = NSURLResponse()
+        nextError = nil
+        nextData = "{\"access_token\": \"open sesame\"}".dataUsingEncoding(NSUTF8StringEncoding)
+        
+        var response: Response? = nil
+        let oauth = OAuth2(requestProcessor: self)
+        let request = ClientCredentialsRequest(url: NSURL(string: "http://localhost/test")!, clientId: "client-id", clientSecret: "client-secret")
+        let expectation = expectationWithDescription("OAuth request")
+        oauth.authenticate(request) { r in
+            expectation.fulfill()
+            response = r
+        }
+        waitForExpectationsWithTimeout(10.0, handler: nil)
+        
+        assertSuccessfulResponse(response)
     }
     
-    override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-        super.tearDown()
+    func process(request: NSURLRequest, completion: URLResponseHandler?) {
+        completion?(nextResponse, nextError, nextData)
+        nextResponse = nil
+        nextError = nil
+        nextData = nil
     }
     
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-    
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measureBlock {
-            // Put the code you want to measure the time of here.
+    private func assertSuccessfulResponse(response: Response?, file: String = __FILE__, line: UInt = __LINE__) {
+        XCTAssertNotNil(response, file: file, line: line)
+        switch (response!) {
+        case .Failure(let reason):
+            switch (reason) {
+            case .WithError(let error): XCTFail("Expected response to be successful, but response failed with NSError: \(error)", file: file, line: line)
+            case .WithReason(let reason): XCTFail("Expected response to be successful, but response failed with reason: \(reason)", file: file, line: line)
+            }
+        default: break
         }
     }
-    
 }

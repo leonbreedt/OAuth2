@@ -15,6 +15,7 @@
 		2E5481631BB271BE00212D62 /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481621BB271BE00212D62 /* Request.swift */; settings = {ASSET_TAGS = (); }; };
 		2E5481651BB2745C00212D62 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481641BB2745C00212D62 /* Response.swift */; settings = {ASSET_TAGS = (); }; };
 		2E5481671BB3C14B00212D62 /* URLRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481661BB3C14B00212D62 /* URLRequestProcessor.swift */; settings = {ASSET_TAGS = (); }; };
+		2ED3280A1BB3C5AC00437208 /* Decodable.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E5481601BB1538B00212D62 /* Decodable.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -26,6 +27,19 @@
 			remoteInfo = OAuth2;
 		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2ED328091BB3C5A000437208 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				2ED3280A1BB3C5AC00437208 /* Decodable.framework in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2E5481431BB1281100212D62 /* OAuth2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OAuth2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -149,6 +163,7 @@
 				2E5481491BB1281100212D62 /* Sources */,
 				2E54814A1BB1281100212D62 /* Frameworks */,
 				2E54814B1BB1281100212D62 /* Resources */,
+				2ED328091BB3C5A000437208 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -381,6 +396,10 @@
 		2E54815B1BB1281100212D62 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OAuth2Tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.bitserf.OAuth2Tests;
@@ -391,6 +410,10 @@
 		2E54815C1BB1281100212D62 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OAuth2Tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.bitserf.OAuth2Tests;
@@ -417,6 +440,7 @@
 				2E5481591BB1281100212D62 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		2E54815A1BB1281100212D62 /* Build configuration list for PBXNativeTarget "OAuth2Tests" */ = {
 			isa = XCConfigurationList;
@@ -425,6 +449,7 @@
 				2E54815C1BB1281100212D62 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
