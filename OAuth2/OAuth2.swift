@@ -48,12 +48,13 @@ public class OAuth2 {
             completion?(.Failure(failure: .WithReason(reason: "invalid URL for request")))
             return
         }
-        guard let urlRequest = request.toNSURLRequest(url) else {
+        guard let urlRequest = request.toNSURLRequestForURL(url) else {
             completion?(.Failure(failure: .WithReason(reason: "failed to create request for URL \(url)")))
             return
         }
         
         // TODO: user hook for modifying request before it is sent.
+        logRequest(urlRequest)
         
         requestProcessor.process(urlRequest) { urlResponse, error, data in
             if error != nil {
@@ -68,7 +69,7 @@ public class OAuth2 {
                         // TODO: log response
                         // TODO: user hook for extracting token and refresh token from response
                         // TODO: parse JSON if no user hook
-                        print("response: \(response)")
+                        self.logResponse(urlResponse as? NSHTTPURLResponse, bodyData: data)
                         
                         completion?(response)
                     } catch let error {
@@ -79,6 +80,39 @@ public class OAuth2 {
                 }
             } else {
                 completion?(.Failure(failure: .WithReason(reason: "invalid response")))
+            }
+        }
+    }
+    
+    private func logRequest(urlRequest: NSURLRequest) {
+        print("\(urlRequest.HTTPMethod!) \(urlRequest.URL!)")
+        if let headers = urlRequest.allHTTPHeaderFields {
+            for (name, value) in headers {
+                print("\(name): \(value)")
+            }
+        }
+        if let bodyData = urlRequest.HTTPBody {
+            if let bodyString = NSString(data: bodyData, encoding: NSUTF8StringEncoding) {
+                print("\n\(bodyString)")
+           } else {
+                print("\n<\(bodyData.length) byte(s)>")
+           }
+        }
+    }
+    
+    private func logResponse(urlResponse: NSHTTPURLResponse?, bodyData: NSData?) {
+        let statusCode = urlResponse?.statusCode ?? 0
+        print("HTTP \(statusCode) \(NSHTTPURLResponse.localizedStringForStatusCode(statusCode))")
+        if let headers = urlResponse?.allHeaderFields {
+            for (name, value) in headers {
+                print("\(name): \(value)")
+            }
+        }
+        if let data = bodyData {
+            if let bodyString = NSString(data: data, encoding: NSUTF8StringEncoding) {
+                print("\n\(bodyString)")
+            } else {
+                print("\n<\(data.length) byte(s)>")
             }
         }
     }

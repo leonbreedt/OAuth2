@@ -50,7 +50,10 @@ struct ClientCredentialsRequest : Request {
     /// - Returns: `nil` if the `url` parameter is not a valid URL.
     init?(url: String, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
         if let authorizationURL = NSURL(string: url) {
-            self.init(url: authorizationURL, clientId: clientId, clientSecret: clientSecret, useAuthorizationHeader: useAuthorizationHeader)
+            self.init(url: authorizationURL,
+                      clientId: clientId,
+                      clientSecret: clientSecret,
+                      useAuthorizationHeader: useAuthorizationHeader)
         } else {
             return nil
         }
@@ -67,8 +70,6 @@ struct ClientCredentialsRequest : Request {
     init(url: NSURL, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
         var parameters: [String : String] = [:]
         var headers: [String : String] = [:]
-        
-        self.authorizationURL = url
         parameters["grant_type"] = "client_credentials"
         if !useAuthorizationHeader {
             parameters["client_id"] = clientId
@@ -77,22 +78,25 @@ struct ClientCredentialsRequest : Request {
             let credentials = "\(clientId):\(clientSecret)".base64Value!
             headers["Authorization"] = "Basic \(credentials)"
         }
+        self.authorizationURL = url
         self.parameters = parameters
         self.headers = headers
     }
 }
 
 extension Request {
-    /// Converts an OAuth request into an `NSURLRequest`. Headers and parameters
-    /// are added to the request.
+    /// Converts a `Request` into an `NSURLRequest` for a given URL. 
+    ///  Headers and parameters from the `Request` are added to the `NSURLRequest`.
     /// - Parameters:
     ///   - url: The URL to use as the base URL for the request.
-    func toNSURLRequest(url: NSURL) -> NSURLRequest? {
+    func toNSURLRequestForURL(url: NSURL) -> NSURLRequest? {
         if let urlComponents = NSURLComponents(string: url.absoluteString) {
+            var queryItems: [NSURLQueryItem] = []
             for (name, value) in parameters {
                 let component = NSURLQueryItem(name: name, value: value)
-                urlComponents.queryItems?.append(component)
+                queryItems.append(component)
             }
+            urlComponents.queryItems = queryItems
             if let url = urlComponents.URL {
                 let request = NSMutableURLRequest(URL: url)
                 for (name, value) in headers {

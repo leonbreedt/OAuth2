@@ -20,28 +20,33 @@ import XCTest
 
 @testable import OAuth2
 
+let clientId = "test-client-id"
+let clientSecret = "test-client-secret"
+let accessToken = "open sesame"
+
 class OAuth2Tests: XCTestCase, URLRequestProcessor {
+    
+    var oauth: OAuth2!
     var nextResponse: NSURLResponse?
     var nextError: NSError?
     var nextData: NSData?
     
-    func testClientCredentialsSuccessfulAuth() {
-        nextResponse = NSURLResponse()
-        nextError = nil
-        nextData = "{\"access_token\": \"open sesame\"}".dataUsingEncoding(NSUTF8StringEncoding)
-        
-        var response: Response? = nil
-        let oauth = OAuth2(requestProcessor: self)
-        let request = ClientCredentialsRequest(url: NSURL(string: "http://localhost/test")!, clientId: "client-id", clientSecret: "client-secret")
-        let expectation = expectationWithDescription("OAuth request")
-        oauth.authenticate(request) { r in
-            expectation.fulfill()
-            response = r
-        }
-        waitForExpectationsWithTimeout(10.0, handler: nil)
-        
-        assertSuccessfulResponse(response)
+    override func setUp() {
+        super.setUp()
+        oauth = OAuth2(requestProcessor: self)
     }
+    
+    func testClientCredentialsSuccessfulAuth() {
+        let url = "http://nonexistent.com/authorization"
+        setOkResponse(url: url, body: ["access_token" : accessToken].toJson())
+        
+        let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
+        let response = runRequest(request)
+
+        assertSuccessfulWithToken(response, accessToken: accessToken)
+    }
+    
+    // - MARK: test helpers
     
     func process(request: NSURLRequest, completion: URLResponseHandler?) {
         completion?(nextResponse, nextError, nextData)
@@ -50,15 +55,56 @@ class OAuth2Tests: XCTestCase, URLRequestProcessor {
         nextData = nil
     }
     
-    private func assertSuccessfulResponse(response: Response?, file: String = __FILE__, line: UInt = __LINE__) {
+    private func setOkResponse(url urlString: String, body: String, headers: [String: String] = [:]) {
+        let url = NSURL(string: urlString)!
+        nextResponse = NSHTTPURLResponse(URL: url, statusCode: 200, HTTPVersion: "HTTP/1.1", headerFields: headers)
+        nextError = nil
+        nextData = body.dataUsingEncoding(NSUTF8StringEncoding)
+    }
+    
+    private func runRequest(request: Request) -> Response {
+        let expectation = expectationWithDescription("OAuth request")
+        var response: Response? = nil
+        oauth.authenticate(request) {
+            response = $0
+            expectation.fulfill()
+        }
+        waitForExpectationsWithTimeout(5.0, handler: nil)
+        return response!
+    }
+    
+    private func assertSuccessfulWithToken(response: Response?, accessToken: String, file: String = __FILE__, line: UInt = __LINE__) {
         XCTAssertNotNil(response, file: file, line: line)
         switch (response!) {
         case .Failure(let reason):
             switch (reason) {
-            case .WithError(let error): XCTFail("Expected response to be successful, but response failed with NSError: \(error)", file: file, line: line)
-            case .WithReason(let reason): XCTFail("Expected response to be successful, but response failed with reason: \(reason)", file: file, line: line)
+            case .WithError(let error):
+                XCTFail("Expected response to be successful, but response failed with NSError: \(error)", file: file, line: line)
+            case .WithReason(let reason):
+                XCTFail("Expected response to be successful, but response failed with reason: \(reason)", file: file, line: line)
             }
-        default: break
+        case .Success(let data):
+            if data.accessToken != accessToken {
+                recordFailureWithDescription("assertSuccessfulWithToken failed: token \"\(data.accessToken)\" is not equal to \"\(accessToken)\"", inFile: file, atLine: line, expected: false)
+            }
         }
+    }
+}
+
+extension String : CustomStringConvertible {
+    public var description: String {
+        return self
+    }
+}
+
+extension Dictionary where Key: CustomStringConvertible, Value: CustomStringConvertible {
+    func toJson() -> String {
+        // What a hack to get toJson() only on Dictionary<String, String>. WTF, Apple.
+        var dict: [NSString : NSString] = [:]
+        for (name, value) in self {
+            dict[NSString(string: name.description)] = NSString(string: value.description)
+        }
+        let data = try! NSJSONSerialization.dataWithJSONObject(dict, options: NSJSONWritingOptions(rawValue: 0))
+        return NSString(data: data, encoding: NSUTF8StringEncoding) as! String
     }
 }
