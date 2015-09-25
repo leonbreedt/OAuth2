@@ -28,7 +28,7 @@ class OAuth2Tests: XCTestCase {
     
     func testClientCredentialsSuccessfulAuth() {
         let url = "http://nonexistent.com/authorization"
-        let processor = processorForResponse(200, url: url, body: ["access_token" : accessToken].toJson())
+        let processor = processorForResponse(200, url: url, body: ["access_token" : accessToken].toJSONString())
         
         let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
@@ -108,22 +108,8 @@ class TestRequestProcessor : URLRequestProcessor {
     }
 }
 
-extension String : CustomStringConvertible {
-    public var description: String {
-        return self
-    }
-}
-
-extension Dictionary where Key: CustomStringConvertible, Value: CustomStringConvertible {
-    func toJson() -> String {
-        // What a hack to get toJson() only on Dictionary<String, String>. WTF, Apple.
-        var dict: [NSString : NSString] = [:]
-        for (name, value) in self {
-            dict[NSString(string: name.description)] = NSString(string: value.description)
-        }
-        let data = try! NSJSONSerialization.dataWithJSONObject(dict, options: NSJSONWritingOptions(rawValue: 0))
-        return NSString(data: data, encoding: NSUTF8StringEncoding) as! String
-    }
+protocol NSStringConvertible {
+    var nsString : NSString { get }
 }
 
 typealias OAuthRequestCompleted = () -> Void
@@ -135,4 +121,23 @@ extension XCTestCase {
         callback(expectation.fulfill)
         waitForExpectationsWithTimeout(timeout, handler: nil)
    }
+}
+
+// What a hack to get toJson() only on Dictionary<String, String> :(
+
+extension String : NSStringConvertible {
+    public var nsString: NSString {
+        return NSString(string: self)
+    }
+}
+
+extension Dictionary where Key: NSStringConvertible, Value: NSStringConvertible {
+    func toJSONString() -> String {
+        var dict: [NSString : NSString] = [:]
+        for (name, value) in self {
+            dict[name.nsString] = value.nsString
+        }
+        let data = try! NSJSONSerialization.dataWithJSONObject(dict, options: NSJSONWritingOptions(rawValue: 0))
+        return NSString(data: data, encoding: NSUTF8StringEncoding) as! String
+    }
 }
