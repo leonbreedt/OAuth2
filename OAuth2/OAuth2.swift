@@ -20,7 +20,6 @@ import Decodable
 
 /// Handler called when an OAuth authorization request has completed.
 public typealias AuthorizationCompletionHandler = Response -> Void
-typealias ResponseParser = (NSURLResponse, NSData) throws -> Response?
 
 /// The entry point into perform OAuth requests in this framework.
 public class OAuth2 {
@@ -97,6 +96,11 @@ public class OAuth2 {
     }
     
     // MARK: - Private
+    
+    private init() {
+    }
+    
+    private typealias ResponseParser = (NSURLResponse, NSData) throws -> Response?
     
     private static func performUrlRequest(
         urlRequest: NSURLRequest,
