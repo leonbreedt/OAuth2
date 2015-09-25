@@ -21,7 +21,7 @@ import Decodable
 /// Handler called when an OAuth authorization request has completed.
 public typealias AuthorizationCompletionHandler = Response -> Void
 
-/// The entry point into perform OAuth requests in this framework.
+/// The entry point into performing OAuth requests in this framework.
 public class OAuth2 {
     /// Performs an OAuth `authorization_code` flow, calling a completion handler when the request is finished.
     /// Will redirect the user to the configured `UserAgent` to perform the authentication. The default user agent
@@ -212,12 +212,6 @@ extension AuthorizationData : Decodable {
 }
 
 extension String {
-    /// A Base64 encoding of the UTF-8 bytes for this string.
-    var base64Value: String? {
-        return self.dataUsingEncoding(NSUTF8StringEncoding)?
-                   .base64EncodedStringWithOptions(NSDataBase64EncodingOptions(rawValue: 0))
-    }
-    
     /// Attempts to parse this string as JSON and returns the parsed object if successful.
     var jsonObject: AnyObject? {
         if let data = dataUsingEncoding(NSUTF8StringEncoding) {

@@ -151,11 +151,19 @@ public struct ClientCredentialsRequest : Request {
             parameters["client_id"] = clientId
             parameters["client_secret"] = clientSecret
         } else {
-            let credentials = "\(clientId):\(clientSecret)".base64Value!
+            let credentials = "\(clientId):\(clientSecret)".base64String!
             headers["Authorization"] = "Basic \(credentials)"
         }
         self.authorizationURL = url
         self.parameters = parameters
         self.headers = headers
+    }
+}
+
+extension String {
+    /// A Base64 encoding of the UTF-8 bytes for this string.
+    var base64String: String? {
+        return self.dataUsingEncoding(NSUTF8StringEncoding)?
+                   .base64EncodedStringWithOptions(NSDataBase64EncodingOptions(rawValue: 0))
     }
 }
