@@ -133,7 +133,7 @@ public class OAuth2 {
 }
 
 extension AuthorizationData : Decodable {
-    /// Decodes authentication data JSON into an `AuthenticationData` object.
+    /// Decodes authorization data JSON into an `AuthorizationData` object.
     public static func decode(json: AnyObject) throws -> AuthorizationData {
         return try AuthorizationData(
             accessToken: json => "access_token",
