@@ -18,12 +18,20 @@
 import Foundation
 import UIKit
 
+/// Defines a response handler for a URL request processor, which should be called
+/// when the response has completed.
 public typealias URLResponseHandler = (NSURLResponse?, NSError?, NSData?) -> Void
 
+/// Represents something that is able to make URL requests.
 public protocol URLRequestProcessor {
+    /// Sends a `NSURLRequest` over the wire.
+    /// - Parameters:
+    ///   - request: The URL request to send.
+    ///   - completion: If not `nil`, the response handler to call when the request has completed.
     func process(request: NSURLRequest, completion: URLResponseHandler?)
 }
 
+/// Makes requests using `NSURLSession` data tasks.
 public class NSURLSessionRequestProcessor : URLRequestProcessor {
     let session: NSURLSession
     

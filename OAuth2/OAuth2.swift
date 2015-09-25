@@ -120,6 +120,8 @@ public class OAuth2 {
                     completion?(.Failure(failure: .WithReason(reason: "invalid resonse type: \(urlResponse)")))
                     return
                 }
+                // TODO: is there an enum somewhere where these codes are kept? what are the "official" codes that can
+                //       be returned by the server according to RFC? what about redirection?
                 if statusCode < 200 || statusCode > 299 {
                     completion?(.Failure(failure: .WithReason(reason: "server request failed with status \(statusCode)")))
                     return
