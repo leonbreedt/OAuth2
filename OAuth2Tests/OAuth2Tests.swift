@@ -38,12 +38,22 @@ class OAuth2Tests: XCTestCase, URLRequestProcessor {
     
     func testClientCredentialsSuccessfulAuth() {
         let url = "http://nonexistent.com/authorization"
-        setOkResponse(url: url, body: ["access_token" : accessToken].toJson())
+        prepareResponse(200, url: url, body: ["access_token" : accessToken].toJson())
         
         let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
         let response = runRequest(request)
 
         assertSuccessfulWithToken(response, accessToken: accessToken)
+    }
+    
+    func testServerReturnsUnauthorized() {
+        let url = "http://nonexistent.com/authorization"
+        prepareResponse(401, url: url, body: "")
+        
+        let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
+        let response = runRequest(request)
+        
+        assertFailedWithReason(response)
     }
     
     // - MARK: test helpers
@@ -55,9 +65,9 @@ class OAuth2Tests: XCTestCase, URLRequestProcessor {
         nextData = nil
     }
     
-    private func setOkResponse(url urlString: String, body: String, headers: [String: String] = [:]) {
+    private func prepareResponse(statusCode: Int, url urlString: String, body: String, headers: [String: String] = [:]) {
         let url = NSURL(string: urlString)!
-        nextResponse = NSHTTPURLResponse(URL: url, statusCode: 200, HTTPVersion: "HTTP/1.1", headerFields: headers)
+        nextResponse = NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers)
         nextError = nil
         nextData = body.dataUsingEncoding(NSUTF8StringEncoding)
     }
@@ -87,6 +97,21 @@ class OAuth2Tests: XCTestCase, URLRequestProcessor {
             if data.accessToken != accessToken {
                 recordFailureWithDescription("assertSuccessfulWithToken failed: token \"\(data.accessToken)\" is not equal to \"\(accessToken)\"", inFile: file, atLine: line, expected: false)
             }
+        }
+    }
+
+    private func assertFailedWithReason(response: Response?, file: String = __FILE__, line: UInt = __LINE__) {
+        XCTAssertNotNil(response, file: file, line: line)
+        switch (response!) {
+        case .Failure(let reason):
+            switch (reason) {
+            case .WithError(let error):
+                recordFailureWithDescription("assertFailedWithReason expected response to have a reason, but had an error instead: \(error)", inFile: file, atLine: line, expected: false)
+            case .WithReason:
+                return
+            }
+        case .Success:
+            recordFailureWithDescription("assertFailedWithReason expected response to fail, but was successful instead", inFile: file, atLine: line, expected: false)
         }
     }
 }

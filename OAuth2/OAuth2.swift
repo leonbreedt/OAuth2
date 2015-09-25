@@ -60,13 +60,19 @@ public class OAuth2 {
             if error != nil {
                 completion?(.Failure(failure: .WithError(error: error!)))
             } else if data != nil && urlResponse != nil {
+                guard let statusCode = (urlResponse as? NSHTTPURLResponse)?.statusCode else {
+                    completion?(.Failure(failure: .WithReason(reason: "invalid resonse type: \(urlResponse)")))
+                    return
+                }
+                if statusCode < 200 || statusCode > 299 {
+                    completion?(.Failure(failure: .WithReason(reason: "server request failed with status \(statusCode)")))
+                    return
+                }
                 if let jsonString = NSString(data: data!, encoding: NSUTF8StringEncoding) as? String,
                    let jsonObject = jsonString.jsonObject {
-                    
                     do {
                         let response = try request.parseInitialJsonResponse(jsonObject)
                         
-                        // TODO: log response
                         // TODO: user hook for extracting token and refresh token from response
                         // TODO: parse JSON if no user hook
                         self.logResponse(urlResponse as? NSHTTPURLResponse, bodyData: data)
