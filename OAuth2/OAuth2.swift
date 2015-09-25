@@ -36,7 +36,11 @@ public class OAuth2 {
     ///                 no notification of completion.
     ///                 The caller must not make any assumptions about which dispatch queue the completion will be
     ///                 called on.
-    public static func authorize(request: AuthorizationCodeRequest, urlProcessor: URLRequestProcessor? = nil, completion: AuthorizationCompletionHandler? = nil) {
+    public static func authorize(
+        request: AuthorizationCodeRequest,
+        urlProcessor: URLRequestProcessor? = nil,
+        completion: AuthorizationCompletionHandler? = nil)
+    {
         guard let authorizationURL = request.authorizationURL else {
             completion?(.Failure(failure: .WithReason(reason: "authorization URL must be set for Authorization Code request")))
             return
@@ -65,7 +69,11 @@ public class OAuth2 {
     ///                 called on.
     ///     - Parameters:
     ///       - response: The `Response` representing the result of the authentication.
-    public static func authorize(request: ClientCredentialsRequest, urlProcessor: URLRequestProcessor? = nil, completion: AuthorizationCompletionHandler? = nil) {
+    public static func authorize(
+        request: ClientCredentialsRequest,
+        urlProcessor: URLRequestProcessor? = nil,
+        completion: AuthorizationCompletionHandler? = nil)
+    {
         guard let url = request.authorizationURL else {
             completion?(.Failure(failure: .WithReason(reason: "authorization URL must be set for Client Credentials request")))
             return
@@ -90,7 +98,12 @@ public class OAuth2 {
     
     // MARK: - Private
     
-    private static func performUrlRequest(urlRequest: NSURLRequest, urlProcessor: URLRequestProcessor, completion: AuthorizationCompletionHandler?, responseParser: ResponseParser) {
+    private static func performUrlRequest(
+        urlRequest: NSURLRequest,
+        urlProcessor: URLRequestProcessor,
+        completion: AuthorizationCompletionHandler?,
+        responseParser: ResponseParser)
+    {
         // TODO: user hook for modifying URL request before it is sent.
         logRequest(urlRequest)
         urlProcessor.process(urlRequest) { urlResponse, error, data in
@@ -154,6 +167,31 @@ public class OAuth2 {
                 print("\n<\(data.length) byte(s)>")
             }
         }
+    }
+}
+
+extension Request {
+    /// Converts a `Request` into an `NSURLRequest` for a given URL.
+    ///  Headers and parameters from the `Request` are added to the `NSURLRequest`.
+    /// - Parameters:
+    ///   - url: The URL to use as the base URL for the request.
+    func toNSURLRequestForURL(url: NSURL) -> NSURLRequest? {
+        if let urlComponents = NSURLComponents(string: url.absoluteString) {
+            var queryItems: [NSURLQueryItem] = []
+            for (name, value) in parameters {
+                let component = NSURLQueryItem(name: name, value: value)
+                queryItems.append(component)
+            }
+            urlComponents.queryItems = queryItems
+            if let url = urlComponents.URL {
+                let request = NSMutableURLRequest(URL: url)
+                for (name, value) in headers {
+                    request.setValue(value, forHTTPHeaderField: name)
+                }
+                return request
+            }
+        }
+        return nil
     }
 }
 
