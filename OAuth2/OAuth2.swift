@@ -24,19 +24,40 @@ typealias ResponseParser = (NSURLResponse, NSData) throws -> Response?
 
 /// The entry point into perform OAuth requests in this framework.
 public class OAuth2 {
-    private let requestProcessor: URLRequestProcessor
-    
-    /// Initializes a new OAuth object.
-    /// - Parameters:
-    ///   - requestProcessor: The processor that will be used to make URL requests.
-    public init(requestProcessor: URLRequestProcessor? = nil) {
-        self.requestProcessor = requestProcessor ?? NSURLSessionRequestProcessor()
-    }
-    
-    /// Performs an OAuth Client Credentials request, calling a completion handler when the
-    /// request has finished.
+    /// Performs an OAuth `authorization_code` flow, calling a completion handler when the request is finished.
+    /// Will redirect the user to the configured `UserAgent` to perform the authentication. The default user agent
+    /// is a modally displayed `OAuthAuthorizationViewController` based implementation, but this can be replaced
+    /// by specifying the `urlProcessor` parameter.
     /// - Parameters:
     ///   - request: The request to perform.
+    ///   - urlProcessor: The URL processor to use. If not specified, a default implementation will be used.
+    ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
+    ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
+    ///                 no notification of completion.
+    ///                 The caller must not make any assumptions about which dispatch queue the completion will be
+    ///                 called on.
+    public static func authorize(request: AuthorizationCodeRequest, urlProcessor: URLRequestProcessor? = nil, completion: AuthorizationCompletionHandler? = nil) {
+        guard let authorizationURL = request.authorizationURL else {
+            completion?(.Failure(failure: .WithReason(reason: "authorization URL must be set for Authorization Code request")))
+            return
+        }
+        guard let tokenURL = request.tokenURL else {
+            completion?(.Failure(failure: .WithReason(reason: "token URL must be set for Authorization Code request")))
+            return
+        }
+        
+        //let processor = urlProcessor ?? WKWebViewRequestProcessor()
+        
+        print("authorizing using \(authorizationURL), calling web browser...")
+        print("code received from web browser, calling token endpoint \(tokenURL)...")
+        print("token received, calling completion")
+    }
+    
+    /// Performs an OAuth `client_credentials` flow, calling a completion handler when the
+    /// request has finished. This is a two-legged flow, and no user interaction is required.
+    /// - Parameters:
+    ///   - request: The request to perform.
+    ///   - urlProcessor: The URL processor to use. If not specified, a default implementation will be used.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
     ///                 no notification of completion.
@@ -44,7 +65,7 @@ public class OAuth2 {
     ///                 called on.
     ///     - Parameters:
     ///       - response: The `Response` representing the result of the authentication.
-    public func authorize(request: ClientCredentialsRequest, completion: AuthorizationCompletionHandler? = nil) {
+    public static func authorize(request: ClientCredentialsRequest, urlProcessor: URLRequestProcessor? = nil, completion: AuthorizationCompletionHandler? = nil) {
         guard let url = request.authorizationURL else {
             completion?(.Failure(failure: .WithReason(reason: "authorization URL must be set for Client Credentials request")))
             return
@@ -53,8 +74,10 @@ public class OAuth2 {
             completion?(.Failure(failure: .WithReason(reason: "failed to create request for URL \(url)")))
             return
         }
+        
+        let processor = urlProcessor ?? NSURLSessionRequestProcessor()
 
-        performUrlRequest(urlRequest, completion: completion) { urlResponse, data in
+        performUrlRequest(urlRequest, urlProcessor: processor, completion: completion) { urlResponse, data in
             if let jsonString = NSString(data: data, encoding: NSUTF8StringEncoding) as? String,
                let jsonObject = jsonString.jsonObject {
                 let authorizationData = try AuthorizationData.decode(jsonObject)
@@ -65,10 +88,12 @@ public class OAuth2 {
         }
     }
     
-    private func performUrlRequest(urlRequest: NSURLRequest, completion: AuthorizationCompletionHandler?, responseParser: ResponseParser) {
-        /// TODO: user hook for modifying URL request before it is sent.
+    // MARK: - Private
+    
+    private static func performUrlRequest(urlRequest: NSURLRequest, urlProcessor: URLRequestProcessor, completion: AuthorizationCompletionHandler?, responseParser: ResponseParser) {
+        // TODO: user hook for modifying URL request before it is sent.
         logRequest(urlRequest)
-        requestProcessor.process(urlRequest) { urlResponse, error, data in
+        urlProcessor.process(urlRequest) { urlResponse, error, data in
             if error != nil {
                 completion?(.Failure(failure: .WithError(error: error!)))
             } else if data != nil && urlResponse != nil {
@@ -83,7 +108,7 @@ public class OAuth2 {
                     return
                 }
                 do {
-                    /// TODO: user hook for processing URL response and giving the thumbs up/down
+                    // TODO: user hook for processing URL response and giving the thumbs up/down
                     if let response = try responseParser(urlResponse!, data!) {
                         completion?(response)
                     } else {
@@ -98,7 +123,7 @@ public class OAuth2 {
         }
     }
     
-    private func logRequest(urlRequest: NSURLRequest) {
+    private static func logRequest(urlRequest: NSURLRequest) {
         print("\(urlRequest.HTTPMethod!) \(urlRequest.URL!)")
         if let headers = urlRequest.allHTTPHeaderFields {
             for (name, value) in headers {
@@ -114,7 +139,7 @@ public class OAuth2 {
         }
     }
     
-    private func logResponse(urlResponse: NSHTTPURLResponse?, bodyData: NSData?) {
+    private static func logResponse(urlResponse: NSHTTPURLResponse?, bodyData: NSData?) {
         let statusCode = urlResponse?.statusCode ?? 0
         print("HTTP \(statusCode) \(NSHTTPURLResponse.localizedStringForStatusCode(statusCode))")
         if let headers = urlResponse?.allHeaderFields {

@@ -32,7 +32,83 @@ public protocol Request {
     var parameters: [String: String] { get }
 }
 
-/// Represents an OAuth 2.0 `client_credentials` request. This is a two-legged request type.
+/// Represents an OAuth 2.0 `authorization_code` request. This is a three-legged flow, and
+/// requires that a user agent (e.g. web browser) be available to handle the user login.
+public struct AuthorizationCodeRequest : Request {
+    public let authorizationURL: NSURL?
+    public var tokenURL: NSURL? = nil
+    public let headers: [String: String]
+    public let parameters: [String: String]
+    
+    /// Initializes a `authorization_code` request.
+    /// - Parameters:
+    ///   - authorizationURI: The URL of the authorization service.
+    ///   - tokenURL: The URL of the service that will provide the tokens once a code has been issued.
+    ///   - clientId: The client ID for the caller, must have been configured on the service.
+    ///   - scope: The scope to request, application-specific.
+    ///   - redirectURL: The URL which the service will redirect to once the user authentication has completed.
+    ///                  For native apps (e.g. iOS), you typically want to set this to a URL scheme registered to your
+    ///                  application, so that you can close the web browser control, etc.
+    ///   - state: An opaque string which will be round-tripped (added as a parameter in redirections) 
+    ///            during the authorization.
+    /// - Returns: `nil` if either the `authorizationURL` or `tokenURL` parameters are not valid URLs.
+    init?(authorizationURL authorizationURLString: String,
+        tokenURL tokenURLString: String,
+        clientId: String,
+        scope: String,
+        redirectURL: String,
+        state: String? = nil)
+    {
+        if let authorizationURL = NSURL(string: authorizationURLString),
+           let tokenURL = NSURL(string: tokenURLString)
+        {
+            self.init(
+                authorizationURL: authorizationURL,
+                tokenURL: tokenURL,
+                clientId: clientId,
+                scope: scope,
+                redirectURL: redirectURL,
+                state: state
+            )
+        } else {
+            return nil
+        }
+    }
+    
+    /// Initializes a `authorization_code` request.
+    /// - Parameters:
+    ///   - authorizationURI: The URL of the authorization service.
+    ///   - tokenURL: The URL of the service that will provide the tokens once a code has been issued.
+    ///   - clientId: The client ID for the caller, must have been configured on the service.
+    ///   - scope: The scope to request, application-specific.
+    ///   - redirectURL: The URL which the service will redirect to once the user authentication has completed.
+    ///                  For native apps (e.g. iOS), you typically want to set this to a URL scheme registered to your
+    ///                  application, so that you can close the web browser control, etc.
+    ///   - state: An opaque string which will be round-tripped (added as a parameter in redirections)
+    ///            during the authorization.
+    init(authorizationURL: NSURL,
+        tokenURL: NSURL,
+        clientId: String,
+        scope: String,
+        redirectURL: String,
+        state: String? = nil)
+    {
+        var parameters: [String : String] = [:]
+        parameters["client_id"] = clientId
+        parameters["response_type"] = "code"
+        parameters["scope"] = scope
+        parameters["redirect_uri"] = redirectURL
+        if state != nil {
+            parameters["state"] = state!
+        }
+        self.authorizationURL = authorizationURL
+        self.tokenURL = tokenURL
+        self.headers = [:]
+        self.parameters = parameters
+    }
+}
+
+/// Represents an OAuth 2.0 `client_credentials` request. This is a two-legged flow.
 public struct ClientCredentialsRequest : Request {
     public let authorizationURL: NSURL?
     public let tokenURL: NSURL? = nil
@@ -42,7 +118,7 @@ public struct ClientCredentialsRequest : Request {
     /// Initializes a `client_credentials` request.
     /// - Parameters:
     ///   - url: The URL of the authorization service.
-    ///   - clientId: The client ID for the caller, must have been provided by the service.
+    ///   - clientId: The client ID for the caller, must have been configured on the service.
     ///   - clientSecret: The client secret for the caller, must have been provided by the service.
     ///   - useAuthorizationHeader: Whether or not to use the `Authorization` HTTP header. If not used,
     ///                             the `client_id` and `client_secret` parameters will be passed via

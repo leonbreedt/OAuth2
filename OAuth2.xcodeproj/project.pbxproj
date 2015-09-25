@@ -14,7 +14,8 @@
 		2E5481611BB1538B00212D62 /* Decodable.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E5481601BB1538B00212D62 /* Decodable.framework */; };
 		2E5481631BB271BE00212D62 /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481621BB271BE00212D62 /* Request.swift */; settings = {ASSET_TAGS = (); }; };
 		2E5481651BB2745C00212D62 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481641BB2745C00212D62 /* Response.swift */; settings = {ASSET_TAGS = (); }; };
-		2E5481671BB3C14B00212D62 /* URLRequestProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481661BB3C14B00212D62 /* URLRequestProcessor.swift */; settings = {ASSET_TAGS = (); }; };
+		2E5481671BB3C14B00212D62 /* URLProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5481661BB3C14B00212D62 /* URLProcessor.swift */; settings = {ASSET_TAGS = (); }; };
+		2EC92B641BB6073E00F58714 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EC92B631BB6073E00F58714 /* UIKit.framework */; };
 		2ED3280A1BB3C5AC00437208 /* Decodable.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2E5481601BB1538B00212D62 /* Decodable.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -52,7 +53,8 @@
 		2E5481601BB1538B00212D62 /* Decodable.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Decodable.framework; path = Carthage/Build/iOS/Decodable.framework; sourceTree = "<group>"; };
 		2E5481621BB271BE00212D62 /* Request.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
 		2E5481641BB2745C00212D62 /* Response.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Response.swift; sourceTree = "<group>"; };
-		2E5481661BB3C14B00212D62 /* URLRequestProcessor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLRequestProcessor.swift; sourceTree = "<group>"; };
+		2E5481661BB3C14B00212D62 /* URLProcessor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLProcessor.swift; sourceTree = "<group>"; };
+		2EC92B631BB6073E00F58714 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EC92B641BB6073E00F58714 /* UIKit.framework in Frameworks */,
 				2E5481611BB1538B00212D62 /* Decodable.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -101,7 +104,7 @@
 				2E54815D1BB12DD400212D62 /* OAuth2.swift */,
 				2E5481621BB271BE00212D62 /* Request.swift */,
 				2E5481641BB2745C00212D62 /* Response.swift */,
-				2E5481661BB3C14B00212D62 /* URLRequestProcessor.swift */,
+				2E5481661BB3C14B00212D62 /* URLProcessor.swift */,
 				2E5481481BB1281100212D62 /* Info.plist */,
 			);
 			path = OAuth2;
@@ -119,6 +122,7 @@
 		2E54815F1BB14CF500212D62 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2EC92B631BB6073E00F58714 /* UIKit.framework */,
 				2E5481601BB1538B00212D62 /* Decodable.framework */,
 			);
 			name = Frameworks;
@@ -233,7 +237,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2E5481671BB3C14B00212D62 /* URLRequestProcessor.swift in Sources */,
+				2E5481671BB3C14B00212D62 /* URLProcessor.swift in Sources */,
 				2E54815E1BB12DD400212D62 /* OAuth2.swift in Sources */,
 				2E5481651BB2745C00212D62 /* Response.swift in Sources */,
 				2E5481631BB271BE00212D62 /* Request.swift in Sources */,

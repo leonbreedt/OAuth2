@@ -16,6 +16,7 @@
 //
 
 import Foundation
+import UIKit
 
 public typealias URLResponseHandler = (NSURLResponse?, NSError?, NSData?) -> Void
 

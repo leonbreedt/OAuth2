@@ -26,23 +26,14 @@ let accessToken = "open sesame"
 
 class OAuth2Tests: XCTestCase {
     
-    var oauth: OAuth2!
-    var requestProcessor: TestRequestProcessor!
-    
-    override func setUp() {
-        super.setUp()
-        requestProcessor = TestRequestProcessor()
-        oauth = OAuth2(requestProcessor: requestProcessor)
-    }
-    
     func testClientCredentialsSuccessfulAuth() {
         let url = "http://nonexistent.com/authorization"
-        prepareResponse(200, url: url, body: ["access_token" : accessToken].toJson())
+        let processor = processorForResponse(200, url: url, body: ["access_token" : accessToken].toJson())
         
         let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
         performOAuthRequest("Client Credentials request") { finished in
-            self.oauth.authorize(request) { response = $0 }
+            OAuth2.authorize(request, urlProcessor: processor) { response = $0 }
             finished()
         }
 
@@ -51,12 +42,12 @@ class OAuth2Tests: XCTestCase {
     
     func testServerReturnsUnauthorized() {
         let url = "http://nonexistent.com/authorization"
-        prepareResponse(401, url: url, body: "")
+        let processor = processorForResponse(401, url: url, body: "")
         
         let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
         performOAuthRequest("Client Credentials request") { finished in
-            self.oauth.authorize(request) { response = $0 }
+            OAuth2.authorize(request, urlProcessor: processor) { response = $0 }
             finished()
         }
         
@@ -65,11 +56,13 @@ class OAuth2Tests: XCTestCase {
     
     // - MARK: test helpers
     
-    private func prepareResponse(statusCode: Int, url urlString: String, body: String, headers: [String: String] = [:]) {
+    private func processorForResponse(statusCode: Int, url urlString: String, body: String, headers: [String: String] = [:]) -> URLRequestProcessor {
         let url = NSURL(string: urlString)!
-        requestProcessor.response = NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers)
-        requestProcessor.error = nil
-        requestProcessor.data = body.dataUsingEncoding(NSUTF8StringEncoding)
+        let processor = TestRequestProcessor()
+        processor.response = NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers)
+        processor.error = nil
+        processor.data = body.dataUsingEncoding(NSUTF8StringEncoding)
+        return processor
     }
     
     private func assertSuccessfulWithToken(response: Response?, accessToken: String, file: String = __FILE__, line: UInt = __LINE__) {
