@@ -24,16 +24,15 @@ let clientId = "test-client-id"
 let clientSecret = "test-client-secret"
 let accessToken = "open sesame"
 
-class OAuth2Tests: XCTestCase, URLRequestProcessor {
+class OAuth2Tests: XCTestCase {
     
     var oauth: OAuth2!
-    var nextResponse: NSURLResponse?
-    var nextError: NSError?
-    var nextData: NSData?
+    var requestProcessor: TestRequestProcessor!
     
     override func setUp() {
         super.setUp()
-        oauth = OAuth2(requestProcessor: self)
+        requestProcessor = TestRequestProcessor()
+        oauth = OAuth2(requestProcessor: requestProcessor)
     }
     
     func testClientCredentialsSuccessfulAuth() {
@@ -41,7 +40,11 @@ class OAuth2Tests: XCTestCase, URLRequestProcessor {
         prepareResponse(200, url: url, body: ["access_token" : accessToken].toJson())
         
         let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
-        let response = runRequest(request)
+        var response: Response!
+        performOAuthRequest("Client Credentials request") { finished in
+            self.oauth.authorize(request) { response = $0 }
+            finished()
+        }
 
         assertSuccessfulWithToken(response, accessToken: accessToken)
     }
@@ -51,36 +54,22 @@ class OAuth2Tests: XCTestCase, URLRequestProcessor {
         prepareResponse(401, url: url, body: "")
         
         let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
-        let response = runRequest(request)
+        var response: Response!
+        performOAuthRequest("Client Credentials request") { finished in
+            self.oauth.authorize(request) { response = $0 }
+            finished()
+        }
         
         assertFailedWithReason(response)
     }
     
     // - MARK: test helpers
     
-    func process(request: NSURLRequest, completion: URLResponseHandler?) {
-        completion?(nextResponse, nextError, nextData)
-        nextResponse = nil
-        nextError = nil
-        nextData = nil
-    }
-    
     private func prepareResponse(statusCode: Int, url urlString: String, body: String, headers: [String: String] = [:]) {
         let url = NSURL(string: urlString)!
-        nextResponse = NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers)
-        nextError = nil
-        nextData = body.dataUsingEncoding(NSUTF8StringEncoding)
-    }
-    
-    private func runRequest(request: Request) -> Response {
-        let expectation = expectationWithDescription("OAuth request")
-        var response: Response? = nil
-        oauth.authenticate(request) {
-            response = $0
-            expectation.fulfill()
-        }
-        waitForExpectationsWithTimeout(5.0, handler: nil)
-        return response!
+        requestProcessor.response = NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers)
+        requestProcessor.error = nil
+        requestProcessor.data = body.dataUsingEncoding(NSUTF8StringEncoding)
     }
     
     private func assertSuccessfulWithToken(response: Response?, accessToken: String, file: String = __FILE__, line: UInt = __LINE__) {
@@ -116,6 +105,16 @@ class OAuth2Tests: XCTestCase, URLRequestProcessor {
     }
 }
 
+class TestRequestProcessor : URLRequestProcessor {
+    var response: NSURLResponse?
+    var error: NSError?
+    var data: NSData?
+    
+    func process(request: NSURLRequest, completion: URLResponseHandler?) {
+        completion?(response, error, data)
+    }
+}
+
 extension String : CustomStringConvertible {
     public var description: String {
         return self
@@ -132,4 +131,15 @@ extension Dictionary where Key: CustomStringConvertible, Value: CustomStringConv
         let data = try! NSJSONSerialization.dataWithJSONObject(dict, options: NSJSONWritingOptions(rawValue: 0))
         return NSString(data: data, encoding: NSUTF8StringEncoding) as! String
     }
+}
+
+typealias OAuthRequestCompleted = () -> Void
+typealias OAuthRequestCallback = OAuthRequestCompleted -> Void
+
+extension XCTestCase {
+    func performOAuthRequest(description: String, timeout: NSTimeInterval = 5.0, callback: OAuthRequestCallback) {
+        let expectation = expectationWithDescription(description)
+        callback(expectation.fulfill)
+        waitForExpectationsWithTimeout(timeout, handler: nil)
+   }
 }

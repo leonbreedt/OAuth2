@@ -18,8 +18,9 @@
 import Foundation
 import Decodable
 
-/// Handler called when an OAuth authentication request has completed.
-public typealias AuthenticationCompletionHandler = Response -> Void
+/// Handler called when an OAuth authorization request has completed.
+public typealias AuthorizationCompletionHandler = Response -> Void
+typealias ResponseParser = (NSURLResponse, NSData) throws -> Response?
 
 /// The entry point into perform OAuth requests in this framework.
 public class OAuth2 {
@@ -32,34 +33,47 @@ public class OAuth2 {
         self.requestProcessor = requestProcessor ?? NSURLSessionRequestProcessor()
     }
     
-    /// Performs an OAuth authentication request, calling a completion handler when the
+    /// Performs an OAuth Client Credentials request, calling a completion handler when the
     /// request has finished.
     /// - Parameters:
-    ///   - request: An OAuth request to execute.
-    ///   - completion: The `AuthenticationCompletionHandler` to call when the request has completed
+    ///   - request: The request to perform.
+    ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
     ///                 no notification of completion.
     ///                 The caller must not make any assumptions about which dispatch queue the completion will be
     ///                 called on.
     ///     - Parameters:
     ///       - response: The `Response` representing the result of the authentication.
-    public func authenticate(request: Request, completion: AuthenticationCompletionHandler? = nil) {
-        guard let url = request.initialUrl else {
-            completion?(.Failure(failure: .WithReason(reason: "invalid URL for request")))
+    public func authorize(request: ClientCredentialsRequest, completion: AuthorizationCompletionHandler? = nil) {
+        guard let url = request.authorizationURL else {
+            completion?(.Failure(failure: .WithReason(reason: "authorization URL must be set for Client Credentials request")))
             return
         }
         guard let urlRequest = request.toNSURLRequestForURL(url) else {
             completion?(.Failure(failure: .WithReason(reason: "failed to create request for URL \(url)")))
             return
         }
-        
-        // TODO: user hook for modifying request before it is sent.
+
+        performUrlRequest(urlRequest, completion: completion) { urlResponse, data in
+            if let jsonString = NSString(data: data, encoding: NSUTF8StringEncoding) as? String,
+               let jsonObject = jsonString.jsonObject {
+                let authorizationData = try AuthorizationData.decode(jsonObject)
+                return .Success(data: authorizationData)
+            } else {
+                return .Failure(failure: .WithReason(reason: "failed to parse JSON authorization response"))
+            }
+        }
+    }
+    
+    private func performUrlRequest(urlRequest: NSURLRequest, completion: AuthorizationCompletionHandler?, responseParser: ResponseParser) {
+        /// TODO: user hook for modifying URL request before it is sent.
         logRequest(urlRequest)
-        
         requestProcessor.process(urlRequest) { urlResponse, error, data in
             if error != nil {
                 completion?(.Failure(failure: .WithError(error: error!)))
             } else if data != nil && urlResponse != nil {
+                self.logResponse(urlResponse as? NSHTTPURLResponse, bodyData: data)
+                
                 guard let statusCode = (urlResponse as? NSHTTPURLResponse)?.statusCode else {
                     completion?(.Failure(failure: .WithReason(reason: "invalid resonse type: \(urlResponse)")))
                     return
@@ -68,21 +82,15 @@ public class OAuth2 {
                     completion?(.Failure(failure: .WithReason(reason: "server request failed with status \(statusCode)")))
                     return
                 }
-                if let jsonString = NSString(data: data!, encoding: NSUTF8StringEncoding) as? String,
-                   let jsonObject = jsonString.jsonObject {
-                    do {
-                        let response = try request.parseInitialJsonResponse(jsonObject)
-                        
-                        // TODO: user hook for extracting token and refresh token from response
-                        // TODO: parse JSON if no user hook
-                        self.logResponse(urlResponse as? NSHTTPURLResponse, bodyData: data)
-                        
+                do {
+                    /// TODO: user hook for processing URL response and giving the thumbs up/down
+                    if let response = try responseParser(urlResponse!, data!) {
                         completion?(response)
-                    } catch let error {
-                        completion?(.Failure(failure: .WithReason(reason: "failed to parse response data: \(error)")))
+                    } else {
+                        completion?(.Failure(failure: .WithReason(reason: "failed to parse response data")))
                     }
-                } else {
-                    completion?(.Failure(failure: .WithReason(reason: "failed to parse response data")))
+                } catch let error {
+                    completion?(.Failure(failure: .WithReason(reason: "failed to parse response data: \(error)")))
                 }
             } else {
                 completion?(.Failure(failure: .WithReason(reason: "invalid response")))
@@ -124,33 +132,10 @@ public class OAuth2 {
     }
 }
 
-/// Represents an error that occured while attempting to parse a server response.
-enum ResponseParseError : ErrorType {
-    case UnsupportedRequestType
-}
-
-extension Request {
-    /// The initial URL to connect to for this request.
-    var initialUrl: NSURL? {
-        switch self {
-        case let r as ClientCredentialsRequest: return r.authorizationURL
-        default: return nil
-        }
-    }
-    
-    /// Parses the initial JSON response for this request.
-    func parseInitialJsonResponse(jsonObject: AnyObject) throws -> Response {
-        switch self {
-        case _ as ClientCredentialsRequest: return .Success(data: try AuthenticationData.decode(jsonObject))
-        default: throw ResponseParseError.UnsupportedRequestType
-        }
-    }
-}
-
-extension AuthenticationData : Decodable {
+extension AuthorizationData : Decodable {
     /// Decodes authentication data JSON into an `AuthenticationData` object.
-    public static func decode(json: AnyObject) throws -> AuthenticationData {
-        return try AuthenticationData(
+    public static func decode(json: AnyObject) throws -> AuthorizationData {
+        return try AuthorizationData(
             accessToken: json => "access_token",
             refreshToken: json =>? "refresh_token",
             expiresIn: json =>? "expires_in")

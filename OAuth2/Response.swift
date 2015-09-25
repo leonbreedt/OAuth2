@@ -17,22 +17,22 @@
 
 import Foundation
 
-/// Represents the response to an authentication attempt.
+/// Represents the response to an authorization attempt.
 public enum Response {
-    /// A successful authentication attempt.
+    /// A successful authorization.
     /// - Parameters:
-    ///   - data: An `AuthenticationData` containing the tokens and other information returned by the server.
-    case Success(data: AuthenticationData)
+    ///   - data: An `AuthorizationData` containing the tokens and other information returned by the server.
+    case Success(data: AuthorizationData)
     
-    /// A failed authentication attempt.
+    /// A failed authorization.
     /// - Parameters:
-    ///   - failure: An `AuthenticationFailure` containing more details about the cause of the failure.
-    case Failure(failure: AuthenticationFailure)
+    ///   - failure: An `AuthorizationFailure` containing more details about the cause of the failure.
+    case Failure(failure: AuthorizationFailure)
 }
 
-/// Contains data returned by the server for a successful authentication.
-public struct AuthenticationData {
-    /// The token that can be used to access resources protected by OAuth.
+/// Contains data returned by the server for a successful authorization.
+public struct AuthorizationData {
+    /// The token that can be used to access the resources protected by OAuth.
     let accessToken: String
     
     /// The refresh token that can be used to obtain a replacement access token when it expires.
@@ -42,14 +42,14 @@ public struct AuthenticationData {
     let expiresIn: Int?
 }
 
-/// Contains information about the cause of an authentication failure.
-public enum AuthenticationFailure {
-    /// An authentication failure having a `String` describing the cause of the failure.
+/// Contains information about the cause of an authorization failure.
+public enum AuthorizationFailure {
+    /// An authorization failure having a `String` describing the cause of the failure.
     /// - Parameters:
     ///   - reason: A human-readable description of the reason for the failure.
     case WithReason(reason: String)
 
-    /// An authentication failure where an `NSError` was thrown during the course of communicating with the server.
+    /// An authorization failure where an `NSError` was thrown during the course of performing the authorization.
     /// - Parameters:
     ///   - error: The error that was thrown.
     case WithError(error: NSError)

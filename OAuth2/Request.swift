@@ -33,11 +33,11 @@ public protocol Request {
 }
 
 /// Represents an OAuth 2.0 `client_credentials` request. This is a two-legged request type.
-struct ClientCredentialsRequest : Request {
-    let authorizationURL: NSURL?
-    let tokenURL: NSURL? = nil
-    let headers: [String: String]
-    let parameters: [String: String]
+public struct ClientCredentialsRequest : Request {
+    public let authorizationURL: NSURL?
+    public let tokenURL: NSURL? = nil
+    public let headers: [String: String]
+    public let parameters: [String: String]
     
     /// Initializes a `client_credentials` request.
     /// - Parameters:
