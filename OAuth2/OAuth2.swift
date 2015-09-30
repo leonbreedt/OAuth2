@@ -21,6 +21,13 @@ import Decodable
 /// Handler called when an OAuth authorization request has completed.
 public typealias AuthorizationCompletionHandler = Response -> Void
 
+/// Defines a response handler for a completed URL request.
+public typealias URLResponseHandler = (NSURLResponse?, NSError?, NSData?) -> Void
+
+/// Defines a request handler that will execute a URL request, and call the response handler
+/// when the request completes.
+public typealias URLRequestHandler = (NSURLRequest, URLResponseHandler) -> Void
+
 /// The entry point into performing OAuth requests in this framework.
 public class OAuth2 {
     /// Performs an OAuth `authorization_code` flow, calling a completion handler when the request is finished.
@@ -29,7 +36,9 @@ public class OAuth2 {
     /// by specifying the `urlProcessor` parameter.
     /// - Parameters:
     ///   - request: The request to perform.
-    ///   - urlProcessor: The URL processor to use. If not specified, a default implementation will be used.
+    ///   - authorizationHandler: The handler to call to perform the authorization request. If not specified, opens a modal
+    ///                           `WKWebView`-based handler to allow the user to log in to the service.
+    ///   - tokenHandler: The handler to call to perform the token request. If not specified, uses a default handler.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
     ///                 no notification of completion.
@@ -37,7 +46,8 @@ public class OAuth2 {
     ///                 called on.
     public static func authorize(
         request: AuthorizationCodeRequest,
-        urlProcessor: URLRequestProcessor? = nil,
+        authorizationHandler: URLRequestHandler? = nil,
+        tokenHandler: URLRequestHandler? = nil,
         completion: AuthorizationCompletionHandler? = nil)
     {
         guard let authorizationURL = request.authorizationURL else {
@@ -48,8 +58,23 @@ public class OAuth2 {
             completion?(.Failure(failure: .WithReason(reason: "token URL must be set for Authorization Code request")))
             return
         }
+        /*
+        guard let authorizationURLRequest = request.toNSURLRequestForURL(authorizationURL) else {
+            completion?(.Failure(failure: .WithReason(reason: "failed to create authorization request for URL \(authorizationURL)")))
+            return
+        }
         
-        //let processor = urlProcessor ?? WKWebViewRequestProcessor()
+        let authHandler = authorizationHandler != nil ? authorizationHandler! : webViewHandler
+        let tokenHandler = tokenHandler != nil ? tokenHandler! : urlSessionHandler
+*/
+        
+        // performUrlRequest(authorizationURL)
+        //    .onSuccess(redirected with code {
+        //      performUrlRequest(tokenURL + code + other params)
+        //         .onSuccess({parseResponse, return token})
+        //         .onFailure(fail)
+        //    })
+        //    .onFailure(fail)
         
         print("authorizing using \(authorizationURL), calling web browser...")
         print("code received from web browser, calling token endpoint \(tokenURL)...")
@@ -60,7 +85,8 @@ public class OAuth2 {
     /// request has finished. This is a two-legged flow, and no user interaction is required.
     /// - Parameters:
     ///   - request: The request to perform.
-    ///   - urlProcessor: The URL processor to use. If not specified, a default implementation will be used.
+    ///   - authorizationHandler: The handler to call to perform the authorization request. If not specified, uses a
+    ///                           default handler.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
     ///                 no notification of completion.
@@ -70,7 +96,7 @@ public class OAuth2 {
     ///       - response: The `Response` representing the result of the authentication.
     public static func authorize(
         request: ClientCredentialsRequest,
-        urlProcessor: URLRequestProcessor? = nil,
+        authorizationHandler: URLRequestHandler? = nil,
         completion: AuthorizationCompletionHandler? = nil)
     {
         guard let url = request.authorizationURL else {
@@ -82,9 +108,9 @@ public class OAuth2 {
             return
         }
         
-        let processor = urlProcessor ?? NSURLSessionRequestProcessor()
-
-        performUrlRequest(urlRequest, urlProcessor: processor, completion: completion) { urlResponse, data in
+        let handler = authorizationHandler != nil ? authorizationHandler! : urlSessionHandler
+        
+        performUrlRequest(urlRequest, handler: handler, completion: completion) { urlResponse, data in
             if let jsonString = NSString(data: data, encoding: NSUTF8StringEncoding) as? String,
                let jsonObject = jsonString.jsonObject {
                 let authorizationData = try AuthorizationData.decode(jsonObject)
@@ -104,13 +130,13 @@ public class OAuth2 {
     
     private static func performUrlRequest(
         urlRequest: NSURLRequest,
-        urlProcessor: URLRequestProcessor,
+        handler: URLRequestHandler,
         completion: AuthorizationCompletionHandler?,
         responseParser: ResponseParser)
     {
         // TODO: user hook for modifying URL request before it is sent.
         logRequest(urlRequest)
-        urlProcessor.process(urlRequest) { urlResponse, error, data in
+        handler(urlRequest) { urlResponse, error, data in
             if error != nil {
                 completion?(.Failure(failure: .WithError(error: error!)))
             } else if data != nil && urlResponse != nil {
@@ -140,6 +166,19 @@ public class OAuth2 {
                 completion?(.Failure(failure: .WithReason(reason: "invalid response")))
             }
         }
+    }
+    
+    private static func urlSessionHandler(request: NSURLRequest, completion: URLResponseHandler) {
+        let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
+        let session = NSURLSession(configuration: configuration)
+        let dataTask = session.dataTaskWithRequest(request) { data, urlResponse, error in
+            completion(urlResponse, error, data)
+        }
+        dataTask.resume()
+    }
+    
+    private static func webViewHandler(request: NSURLRequest, completion: URLResponseHandler) {
+        // TODO: implement
     }
     
     private static func logRequest(urlRequest: NSURLRequest) {

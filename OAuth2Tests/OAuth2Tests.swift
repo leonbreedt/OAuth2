@@ -28,12 +28,12 @@ class OAuth2Tests: XCTestCase {
     
     func testClientCredentialsSuccessfulAuth() {
         let url = "http://nonexistent.com/authorization"
-        let processor = processorForResponse(200, url: url, body: ["access_token" : accessToken].toJSONString())
+        let handler = handlerForResponse(200, url: url, body: ["access_token" : accessToken].toJSONString())
         
         let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
         performOAuthRequest("Client Credentials request") { finished in
-            OAuth2.authorize(request, urlProcessor: processor) { response = $0 }
+            OAuth2.authorize(request, authorizationHandler: handler) { response = $0 }
             finished()
         }
 
@@ -42,12 +42,12 @@ class OAuth2Tests: XCTestCase {
     
     func testServerReturnsUnauthorized() {
         let url = "http://nonexistent.com/authorization"
-        let processor = processorForResponse(401, url: url, body: "")
+        let handler = handlerForResponse(401, url: url, body: "")
         
         let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
         performOAuthRequest("Client Credentials request") { finished in
-            OAuth2.authorize(request, urlProcessor: processor) { response = $0 }
+            OAuth2.authorize(request, authorizationHandler: handler) { response = $0 }
             finished()
         }
         
@@ -56,13 +56,14 @@ class OAuth2Tests: XCTestCase {
     
     // - MARK: test helpers
     
-    private func processorForResponse(statusCode: Int, url urlString: String, body: String, headers: [String: String] = [:]) -> URLRequestProcessor {
+    private func handlerForResponse(statusCode: Int, url urlString: String, body: String, headers: [String: String] = [:]) -> URLRequestHandler {
         let url = NSURL(string: urlString)!
-        let processor = TestRequestProcessor()
-        processor.response = NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers)
-        processor.error = nil
-        processor.data = body.dataUsingEncoding(NSUTF8StringEncoding)
-        return processor
+        return { request, responseHandler in
+            responseHandler(
+                NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers),
+                nil,
+                body.dataUsingEncoding(NSUTF8StringEncoding))
+        }
     }
     
     private func assertSuccessfulWithToken(response: Response?, accessToken: String, file: String = __FILE__, line: UInt = __LINE__) {
@@ -95,16 +96,6 @@ class OAuth2Tests: XCTestCase {
         case .Success:
             recordFailureWithDescription("assertFailedWithReason expected response to fail, but was successful instead", inFile: file, atLine: line, expected: false)
         }
-    }
-}
-
-class TestRequestProcessor : URLRequestProcessor {
-    var response: NSURLResponse?
-    var error: NSError?
-    var data: NSData?
-    
-    func process(request: NSURLRequest, completion: URLResponseHandler?) {
-        completion?(response, error, data)
     }
 }
 
