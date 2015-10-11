@@ -4,7 +4,12 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>OAuth2.xcscheme</key>
+		<key>OAuth2-OSX.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>OAuth2-iOS.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
@@ -12,12 +17,22 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>2E5481421BB1281100212D62</key>
+		<key>2EDB76711BCA237C001C016E</key>
 		<dict>
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>2E54814C1BB1281100212D62</key>
+		<key>2EDB767B1BCA237C001C016E</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>2EDB76901BCA23E8001C016E</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>2EDB76991BCA23E8001C016E</key>
 		<dict>
 			<key>primary</key>
 			<true/>

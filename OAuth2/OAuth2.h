@@ -15,7 +15,7 @@
 // limitations under the License.
 //
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 
 FOUNDATION_EXPORT double OAuth2VersionNumber;
 FOUNDATION_EXPORT const unsigned char OAuth2VersionString[];

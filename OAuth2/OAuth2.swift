@@ -60,13 +60,13 @@ public class OAuth2 {
         }
         /*
         guard let authorizationURLRequest = request.toNSURLRequestForURL(authorizationURL) else {
-            completion?(.Failure(failure: .WithReason(reason: "failed to create authorization request for URL \(authorizationURL)")))
-            return
+        completion?(.Failure(failure: .WithReason(reason: "failed to create authorization request for URL \(authorizationURL)")))
+        return
         }
         
         let authHandler = authorizationHandler != nil ? authorizationHandler! : webViewHandler
         let tokenHandler = tokenHandler != nil ? tokenHandler! : urlSessionHandler
-*/
+        */
         
         // performUrlRequest(authorizationURL)
         //    .onSuccess(redirected with code {
@@ -112,9 +112,9 @@ public class OAuth2 {
         
         performUrlRequest(urlRequest, handler: handler, completion: completion) { urlResponse, data in
             if let jsonString = NSString(data: data, encoding: NSUTF8StringEncoding) as? String,
-               let jsonObject = jsonString.jsonObject {
-                let authorizationData = try AuthorizationData.decode(jsonObject)
-                return .Success(data: authorizationData)
+                let jsonObject = jsonString.jsonObject {
+                    let authorizationData = try AuthorizationData.decode(jsonObject)
+                    return .Success(data: authorizationData)
             } else {
                 return .Failure(failure: .WithReason(reason: "failed to parse JSON authorization response"))
             }
@@ -191,9 +191,9 @@ public class OAuth2 {
         if let bodyData = urlRequest.HTTPBody {
             if let bodyString = NSString(data: bodyData, encoding: NSUTF8StringEncoding) {
                 print("\n\(bodyString)")
-           } else {
+            } else {
                 print("\n<\(bodyData.length) byte(s)>")
-           }
+            }
         }
     }
     

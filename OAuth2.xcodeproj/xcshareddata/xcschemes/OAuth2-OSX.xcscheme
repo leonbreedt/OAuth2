@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2E5481421BB1281100212D62"
+               BlueprintIdentifier = "2EDB76901BCA23E8001C016E"
                BuildableName = "OAuth2.framework"
-               BlueprintName = "OAuth2"
+               BlueprintName = "OAuth2-OSX"
                ReferencedContainer = "container:OAuth2.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,9 +32,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "2E54814C1BB1281100212D62"
+               BlueprintIdentifier = "2EDB76991BCA23E8001C016E"
                BuildableName = "OAuth2Tests.xctest"
-               BlueprintName = "OAuth2Tests"
+               BlueprintName = "OAuth2-OSXTests"
                ReferencedContainer = "container:OAuth2.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -42,9 +42,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
+            BlueprintIdentifier = "2EDB76901BCA23E8001C016E"
             BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
+            BlueprintName = "OAuth2-OSX"
             ReferencedContainer = "container:OAuth2.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -64,9 +64,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
+            BlueprintIdentifier = "2EDB76901BCA23E8001C016E"
             BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
+            BlueprintName = "OAuth2-OSX"
             ReferencedContainer = "container:OAuth2.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -82,9 +82,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "2E5481421BB1281100212D62"
+            BlueprintIdentifier = "2EDB76901BCA23E8001C016E"
             BuildableName = "OAuth2.framework"
-            BlueprintName = "OAuth2"
+            BlueprintName = "OAuth2-OSX"
             ReferencedContainer = "container:OAuth2.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
