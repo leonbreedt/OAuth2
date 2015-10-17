@@ -24,6 +24,9 @@ public enum Response {
     ///   - data: An `AuthorizationData` containing the tokens and other information returned by the server.
     case Success(data: AuthorizationData)
     
+    /// A successful authorization, with a code returned to be used with the token issuing server.
+    case CodeIssued(code: String)
+    
     /// A failed authorization.
     /// - Parameters:
     ///   - failure: An `AuthorizationFailure` containing more details about the cause of the failure.
@@ -40,6 +43,14 @@ public struct AuthorizationData {
     
     /// The amount of time, in seconds, until the access token expires.
     let expiresIn: Int?
+}
+
+/// Enumerates the types of failures that can be encountered when attempting to parse authorization data.
+public enum AuthorizationDataInvalid : ErrorType {
+    /// The JSON is malformed or not valid JSON
+    case MalformedJSON
+    /// The `access_token` field is missing from the JSON response.
+    case MissingAccessToken
 }
 
 /// Contains information about the cause of an authorization failure.

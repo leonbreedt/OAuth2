@@ -16,7 +16,10 @@
 //
 
 import Foundation
-import Decodable
+
+#if os(iOS)
+import UIKit
+#endif
 
 /// Handler called when an OAuth authorization request has completed.
 public typealias AuthorizationCompletionHandler = Response -> Void
@@ -58,27 +61,35 @@ public class OAuth2 {
             completion?(.Failure(failure: .WithReason(reason: "token URL must be set for Authorization Code request")))
             return
         }
-        /*
-        guard let authorizationURLRequest = request.toNSURLRequestForURL(authorizationURL) else {
-        completion?(.Failure(failure: .WithReason(reason: "failed to create authorization request for URL \(authorizationURL)")))
-        return
+        
+        let codeCompletionHandler: AuthorizationCompletionHandler = { response in
+            switch response {
+            case .CodeIssued(let code):
+                let tokenRequestHandler = tokenHandler != nil ? tokenHandler! : urlSessionHandler
+                let tokenParameters = request.tokenParameters(code)
+                let tokenRequest = parametrizedUrlRequest(tokenURL, parameters: tokenParameters)
+                print("code received from web browser, calling token endpoint \(tokenURL)...")
+                let wrapperCompletion: AuthorizationCompletionHandler = { response in
+                    print("token received, calling completion")
+                    completion?(response)
+                }
+                performUrlRequest(tokenRequest!, handler: tokenRequestHandler, completion: wrapperCompletion) { urlResponse, data in
+                    print("received token response \(urlResponse) with \(data.length) bytes")
+                    return nil
+                }
+            default:
+                completion?(.Failure(failure: .WithReason(reason: "Expected an OAuth 'code' to be issued, got \(response) instead")))
+            }
         }
         
-        let authHandler = authorizationHandler != nil ? authorizationHandler! : webViewHandler
-        let tokenHandler = tokenHandler != nil ? tokenHandler! : urlSessionHandler
-        */
-        
-        // performUrlRequest(authorizationURL)
-        //    .onSuccess(redirected with code {
-        //      performUrlRequest(tokenURL + code + other params)
-        //         .onSuccess({parseResponse, return token})
-        //         .onFailure(fail)
-        //    })
-        //    .onFailure(fail)
+        let authRequestHandler = authorizationHandler != nil ? authorizationHandler! : webViewHandler
+        let authRequest = parametrizedUrlRequest(authorizationURL, parameters: request.parameters)
         
         print("authorizing using \(authorizationURL), calling web browser...")
-        print("code received from web browser, calling token endpoint \(tokenURL)...")
-        print("token received, calling completion")
+        performUrlRequest(authRequest!, handler: authRequestHandler, completion: codeCompletionHandler) { urlResponse, data in
+            print("received auth response \(urlResponse) with \(data.length) bytes")
+            return nil
+        }
     }
     
     /// Performs an OAuth `client_credentials` flow, calling a completion handler when the
@@ -103,7 +114,7 @@ public class OAuth2 {
             completion?(.Failure(failure: .WithReason(reason: "authorization URL must be set for Client Credentials request")))
             return
         }
-        guard let urlRequest = request.toNSURLRequestForURL(url) else {
+        guard let urlRequest = parametrizedUrlRequest(url, parameters: request.parameters, headers: request.headers) else {
             completion?(.Failure(failure: .WithReason(reason: "failed to create request for URL \(url)")))
             return
         }
@@ -178,7 +189,11 @@ public class OAuth2 {
     }
     
     private static func webViewHandler(request: NSURLRequest, completion: URLResponseHandler) {
-        // TODO: implement
+//        let controller = WebViewController()
+#if os(iOS)
+//        UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(controller, animated: true, completion: nil)
+#endif
+//        controller.loadRequest(request, completion: completion)
     }
     
     private static func logRequest(urlRequest: NSURLRequest) {
@@ -213,9 +228,28 @@ public class OAuth2 {
             }
         }
     }
+    
+    private static func parametrizedUrlRequest(url: NSURL, parameters: [String: String], headers: [String: String] = [:]) -> NSURLRequest? {
+        if let urlComponents = NSURLComponents(string: url.absoluteString) {
+            var queryItems: [NSURLQueryItem] = []
+            for (name, value) in parameters {
+                let component = NSURLQueryItem(name: name, value: value)
+                queryItems.append(component)
+            }
+            urlComponents.queryItems = queryItems
+            if let url = urlComponents.URL {
+                let request = NSMutableURLRequest(URL: url)
+                for (name, value) in headers {
+                    request.setValue(value, forHTTPHeaderField: name)
+                }
+                return request
+            }
+        }
+        return nil
+    }
 }
 
-extension Request {
+/*extension Request {
     /// Converts a `Request` into an `NSURLRequest` for a given URL.
     ///  Headers and parameters from the `Request` are added to the `NSURLRequest`.
     /// - Parameters:
@@ -239,14 +273,19 @@ extension Request {
         return nil
     }
 }
+*/
 
-extension AuthorizationData : Decodable {
+extension AuthorizationData {
     /// Decodes authorization data JSON into an `AuthorizationData` object.
     public static func decode(json: AnyObject) throws -> AuthorizationData {
-        return try AuthorizationData(
-            accessToken: json => "access_token",
-            refreshToken: json =>? "refresh_token",
-            expiresIn: json =>? "expires_in")
+        guard let dict = json as? NSDictionary else { throw AuthorizationDataInvalid.MalformedJSON }
+        guard let accessToken = dict["access_token"] as? String else { throw AuthorizationDataInvalid.MissingAccessToken }
+        let refreshToken = dict["refresh_token"] as? String
+        let expiresInSeconds = dict["expires_in"] as? Int
+        return AuthorizationData(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            expiresIn: expiresInSeconds)
     }
 }
 

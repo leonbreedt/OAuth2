@@ -52,7 +52,7 @@ public struct AuthorizationCodeRequest : Request {
     ///   - state: An opaque string which will be round-tripped (added as a parameter in redirections) 
     ///            during the authorization.
     /// - Returns: `nil` if either the `authorizationURL` or `tokenURL` parameters are not valid URLs.
-    init?(authorizationURL authorizationURLString: String,
+    public init?(authorizationURL authorizationURLString: String,
         tokenURL tokenURLString: String,
         clientId: String,
         scope: String,
@@ -86,7 +86,7 @@ public struct AuthorizationCodeRequest : Request {
     ///                  application, so that you can close the web browser control, etc.
     ///   - state: An opaque string which will be round-tripped (added as a parameter in redirections)
     ///            during the authorization.
-    init(authorizationURL: NSURL,
+    public init(authorizationURL: NSURL,
         tokenURL: NSURL,
         clientId: String,
         scope: String,
@@ -106,6 +106,22 @@ public struct AuthorizationCodeRequest : Request {
         self.headers = [:]
         self.parameters = parameters
     }
+    
+    // Returns the parameters required for the second leg of the `authorization_code` request.
+    // - Parameters:
+    //   - code: The authentication code returned by the server, should be exchanged for a token.
+    func tokenParameters(code: String) -> [String: String] {
+        var params: [String : String] = [:]
+        params["client_id"] = parameters["client_id"]
+        params["client_secret"] = "TODO" // TODO
+        params["code"] = code
+        params["redirect_uri"] = parameters["redirect_uri"]
+        params["grant_type"] = "authorization_code"
+        if let state = parameters["state"] {
+            params["state"] = state
+        }
+        return params
+    }
 }
 
 /// Represents an OAuth 2.0 `client_credentials` request. This is a two-legged flow.
@@ -124,7 +140,7 @@ public struct ClientCredentialsRequest : Request {
     ///                             the `client_id` and `client_secret` parameters will be passed via
     ///                             HTTP request parameters instead.
     /// - Returns: `nil` if the `url` parameter is not a valid URL.
-    init?(url: String, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
+    public init?(url: String, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
         if let authorizationURL = NSURL(string: url) {
             self.init(url: authorizationURL,
                       clientId: clientId,
@@ -143,7 +159,7 @@ public struct ClientCredentialsRequest : Request {
     ///   - useAuthorizationHeader: Whether or not to use the `Authorization` HTTP header. If not used,
     ///                             the `client_id` and `client_secret` parameters will be passed via
     ///                             HTTP request parameters instead.
-    init(url: NSURL, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
+    public init(url: NSURL, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
         var parameters: [String : String] = [:]
         var headers: [String : String] = [:]
         parameters["grant_type"] = "client_credentials"

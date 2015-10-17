@@ -4,4 +4,7 @@
    <FileRef
       location = "group:OAuth2.xcodeproj">
    </FileRef>
+   <FileRef
+      location = "group:OAuth2Example/OAuth2Example.xcodeproj">
+   </FileRef>
 </Workspace>

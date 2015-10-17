@@ -39,7 +39,7 @@ class OAuth2Tests: XCTestCase {
 
         assertSuccessfulWithToken(response, accessToken: accessToken)
     }
-    
+        
     func testServerReturnsUnauthorized() {
         let url = "http://nonexistent.com/authorization"
         let handler = handlerForResponse(401, url: url, body: "")

@@ -7,20 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2E42978F1BCA29E200A2A358 /* Decodable.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E42978E1BCA29E200A2A358 /* Decodable.framework */; };
-		2E4297911BCA2A2400A2A358 /* Decodable.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2E42978E1BCA29E200A2A358 /* Decodable.framework */; };
-		2E4297961BCA2A7900A2A358 /* Decodable.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2E42978E1BCA29E200A2A358 /* Decodable.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		2E074A7E1BCA2D9C00D149D9 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E074A7D1BCA2D9C00D149D9 /* WebViewController.swift */; };
 		2EDB76761BCA237C001C016E /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EDB76751BCA237C001C016E /* OAuth2.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		2EDB767D1BCA237C001C016E /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EDB76721BCA237C001C016E /* OAuth2.framework */; settings = {ASSET_TAGS = (); }; };
+		2EDB767D1BCA237C001C016E /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EDB76721BCA237C001C016E /* OAuth2.framework */; };
 		2EDB76821BCA237C001C016E /* OAuth2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76811BCA237C001C016E /* OAuth2Tests.swift */; };
-		2EDB769B1BCA23E8001C016E /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EDB76911BCA23E8001C016E /* OAuth2.framework */; settings = {ASSET_TAGS = (); }; };
+		2EDB769B1BCA23E8001C016E /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EDB76911BCA23E8001C016E /* OAuth2.framework */; };
 		2EDB76A81BCA24E1001C016E /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EDB76751BCA237C001C016E /* OAuth2.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		2EDB76AA1BCA263C001C016E /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76A91BCA263C001C016E /* OAuth2.swift */; settings = {ASSET_TAGS = (); }; };
-		2EDB76AB1BCA263C001C016E /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76A91BCA263C001C016E /* OAuth2.swift */; settings = {ASSET_TAGS = (); }; };
-		2EDB76AF1BCA2682001C016E /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AD1BCA2682001C016E /* Request.swift */; settings = {ASSET_TAGS = (); }; };
-		2EDB76B01BCA2682001C016E /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AD1BCA2682001C016E /* Request.swift */; settings = {ASSET_TAGS = (); }; };
-		2EDB76B11BCA2682001C016E /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AE1BCA2682001C016E /* Response.swift */; settings = {ASSET_TAGS = (); }; };
-		2EDB76B21BCA2682001C016E /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AE1BCA2682001C016E /* Response.swift */; settings = {ASSET_TAGS = (); }; };
+		2EDB76AA1BCA263C001C016E /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76A91BCA263C001C016E /* OAuth2.swift */; };
+		2EDB76AB1BCA263C001C016E /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76A91BCA263C001C016E /* OAuth2.swift */; };
+		2EDB76AF1BCA2682001C016E /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AD1BCA2682001C016E /* Request.swift */; };
+		2EDB76B01BCA2682001C016E /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AD1BCA2682001C016E /* Request.swift */; };
+		2EDB76B11BCA2682001C016E /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AE1BCA2682001C016E /* Response.swift */; };
+		2EDB76B21BCA2682001C016E /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AE1BCA2682001C016E /* Response.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,7 +45,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				2E4297961BCA2A7900A2A358 /* Decodable.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -55,7 +52,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		2E42978E1BCA29E200A2A358 /* Decodable.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Decodable.framework; path = Carthage/Build/iOS/Decodable.framework; sourceTree = "<group>"; };
+		2E074A7D1BCA2D9C00D149D9 /* WebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		2EDB76721BCA237C001C016E /* OAuth2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OAuth2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2EDB76751BCA237C001C016E /* OAuth2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OAuth2.h; sourceTree = "<group>"; };
 		2EDB76771BCA237C001C016E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -74,7 +71,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2E42978F1BCA29E200A2A358 /* Decodable.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,7 +78,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2E4297911BCA2A2400A2A358 /* Decodable.framework in Frameworks */,
 				2EDB767D1BCA237C001C016E /* OAuth2.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -105,26 +100,9 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		2E4297901BCA29E600A2A358 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				2E4297951BCA2A6C00A2A358 /* iOS */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		2E4297951BCA2A6C00A2A358 /* iOS */ = {
-			isa = PBXGroup;
-			children = (
-				2E42978E1BCA29E200A2A358 /* Decodable.framework */,
-			);
-			name = iOS;
-			sourceTree = "<group>";
-		};
 		2EDB76681BCA237C001C016E = {
 			isa = PBXGroup;
 			children = (
-				2E4297901BCA29E600A2A358 /* Frameworks */,
 				2EDB76741BCA237C001C016E /* OAuth2 */,
 				2EDB76801BCA237C001C016E /* OAuth2Tests */,
 				2EDB76731BCA237C001C016E /* Products */,
@@ -149,6 +127,7 @@
 				2EDB76A91BCA263C001C016E /* OAuth2.swift */,
 				2EDB76AD1BCA2682001C016E /* Request.swift */,
 				2EDB76AE1BCA2682001C016E /* Response.swift */,
+				2E074A7D1BCA2D9C00D149D9 /* WebViewController.swift */,
 				2EDB76771BCA237C001C016E /* Info.plist */,
 			);
 			path = OAuth2;
@@ -265,7 +244,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0700;
-				LastUpgradeCheck = 0700;
+				LastUpgradeCheck = 0710;
 				ORGANIZATIONNAME = "Leon Breedt";
 				TargetAttributes = {
 					2EDB76711BCA237C001C016E = {
@@ -340,6 +319,7 @@
 			files = (
 				2EDB76AA1BCA263C001C016E /* OAuth2.swift in Sources */,
 				2EDB76B11BCA2682001C016E /* Response.swift in Sources */,
+				2E074A7E1BCA2D9C00D149D9 /* WebViewController.swift in Sources */,
 				2EDB76AF1BCA2682001C016E /* Request.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -482,10 +462,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = OAuth2/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -504,10 +481,7 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = OAuth2/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -520,10 +494,7 @@
 		2EDB768A1BCA237C001C016E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = OAuth2Tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.bitserf.OAuth2Tests;
@@ -534,10 +505,7 @@
 		2EDB768B1BCA237C001C016E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = OAuth2Tests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = org.bitserf.OAuth2Tests;
