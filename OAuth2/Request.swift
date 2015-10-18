@@ -17,34 +17,23 @@
 
 import Foundation
 
-/// Represents a general OAuth 2.0 request.
-public protocol Request {
-    /// The authorization URL for the request, if applicable to the grant type.
-    var authorizationURL: NSURL? { get }
-    
-    /// The token URL for the request, if applicable to the grant type.
-    var tokenURL: NSURL? { get }
-    
-    /// Any HTTP headers that need to be set for the request.
-    var headers: [String: String] { get }
-    
-    /// Any URI parameters that need to be set for the request.
-    var parameters: [String: String] { get }
-}
-
 /// Represents an OAuth 2.0 `authorization_code` request. This is a three-legged flow, and
 /// requires that a user agent (e.g. web browser) be available to handle the user login.
-public struct AuthorizationCodeRequest : Request {
-    public let authorizationURL: NSURL?
-    public var tokenURL: NSURL? = nil
-    public let headers: [String: String]
-    public let parameters: [String: String]
+public struct AuthorizationCodeRequest {
+    public let authorizationURL: NSURL
+    public let tokenURL: NSURL
+    public let clientId: String
+    public let clientSecret: String
+    public let redirectURL: NSURL
+    public let scope: String?
+    public let state: String?
     
     /// Initializes a `authorization_code` request.
     /// - Parameters:
     ///   - authorizationURI: The URL of the authorization service.
     ///   - tokenURL: The URL of the service that will provide the tokens once a code has been issued.
-    ///   - clientId: The client ID for the caller, must have been configured on the service.
+    ///   - clientId: The client ID for the calling application, must have been provided by the service.
+    ///   - clientSecret: The client secret for the calling application, must have been provided by the service.
     ///   - scope: The scope to request, application-specific.
     ///   - redirectURL: The URL which the service will redirect to once the user authentication has completed.
     ///                  For native apps (e.g. iOS), you typically want to set this to a URL scheme registered to your
@@ -55,19 +44,22 @@ public struct AuthorizationCodeRequest : Request {
     public init?(authorizationURL authorizationURLString: String,
         tokenURL tokenURLString: String,
         clientId: String,
-        scope: String,
+        clientSecret: String,
         redirectURL: String,
+        scope: String? = nil,
         state: String? = nil)
     {
         if let authorizationURL = NSURL(string: authorizationURLString),
-           let tokenURL = NSURL(string: tokenURLString)
+           let tokenURL = NSURL(string: tokenURLString),
+           let redirectURL = NSURL(string: redirectURL)
         {
             self.init(
                 authorizationURL: authorizationURL,
                 tokenURL: tokenURL,
                 clientId: clientId,
-                scope: scope,
+                clientSecret: clientSecret,
                 redirectURL: redirectURL,
+                scope: scope,
                 state: state
             )
         } else {
@@ -79,7 +71,8 @@ public struct AuthorizationCodeRequest : Request {
     /// - Parameters:
     ///   - authorizationURI: The URL of the authorization service.
     ///   - tokenURL: The URL of the service that will provide the tokens once a code has been issued.
-    ///   - clientId: The client ID for the caller, must have been configured on the service.
+    ///   - clientId: The client ID for the calling application, must have been provided by the service.
+    ///   - clientSecret: The client secret for the calling application, must have been provided by the service.
     ///   - scope: The scope to request, application-specific.
     ///   - redirectURL: The URL which the service will redirect to once the user authentication has completed.
     ///                  For native apps (e.g. iOS), you typically want to set this to a URL scheme registered to your
@@ -89,47 +82,59 @@ public struct AuthorizationCodeRequest : Request {
     public init(authorizationURL: NSURL,
         tokenURL: NSURL,
         clientId: String,
-        scope: String,
-        redirectURL: String,
+        clientSecret: String,
+        redirectURL: NSURL,
+        scope: String? = nil,
         state: String? = nil)
     {
-        var parameters: [String : String] = [:]
-        parameters["client_id"] = clientId
-        parameters["response_type"] = "code"
-        parameters["scope"] = scope
-        parameters["redirect_uri"] = redirectURL
-        if state != nil {
-            parameters["state"] = state!
-        }
         self.authorizationURL = authorizationURL
         self.tokenURL = tokenURL
-        self.headers = [:]
-        self.parameters = parameters
+        self.clientId = clientId
+        self.clientSecret = clientSecret
+        self.scope = scope
+        self.redirectURL = redirectURL
+        self.state = state
     }
     
-    // Returns the parameters required for the second leg of the `authorization_code` request.
-    // - Parameters:
-    //   - code: The authentication code returned by the server, should be exchanged for a token.
-    func tokenParameters(code: String) -> [String: String] {
-        var params: [String : String] = [:]
-        params["client_id"] = parameters["client_id"]
-        params["client_secret"] = "TODO" // TODO
-        params["code"] = code
-        params["redirect_uri"] = parameters["redirect_uri"]
-        params["grant_type"] = "authorization_code"
-        if let state = parameters["state"] {
-            params["state"] = state
+    /// Creates an `NSURLRequest` that can be used to obtain an authentication code, which can be
+    /// exchanged for an access token.
+    func authorizationRequest() -> NSURLRequest {
+        var parameters = [
+            "client_id" : clientId,
+            "response_type" : "code",
+            "redirect_uri" : redirectURL.absoluteString
+        ]
+        if scope != nil {
+            parameters["scope"] = scope!
         }
-        return params
+        if state !=  nil {
+            parameters["state"] = state!
+        }
+        return buildURLRequest(authorizationURL, queryParameters: parameters)!
+    }
+    
+    /// Creates an `NSURLRequest` that can be used to obtain an access token for an issued authentication code.
+    func tokenRequest(code: String) -> NSURLRequest {
+        var parameters = [
+            "client_id" : clientId,
+            "client_secret" : clientSecret,
+            "code" : code,
+            "redirect_uri" : redirectURL.absoluteString,
+            "grant_type" : "authorization_code"
+        ]
+        if state !=  nil {
+            parameters["state"] = state!
+        }
+        return buildURLRequest(tokenURL, formParameters: parameters, method: "POST")!
     }
 }
 
 /// Represents an OAuth 2.0 `client_credentials` request. This is a two-legged flow.
-public struct ClientCredentialsRequest : Request {
-    public let authorizationURL: NSURL?
-    public let tokenURL: NSURL? = nil
-    public let headers: [String: String]
-    public let parameters: [String: String]
+public struct ClientCredentialsRequest {
+    public let authorizationURL: NSURL
+    public let clientId: String
+    public let clientSecret: String
+    public let useAuthorizationHeader: Bool
     
     /// Initializes a `client_credentials` request.
     /// - Parameters:
@@ -140,9 +145,9 @@ public struct ClientCredentialsRequest : Request {
     ///                             the `client_id` and `client_secret` parameters will be passed via
     ///                             HTTP request parameters instead.
     /// - Returns: `nil` if the `url` parameter is not a valid URL.
-    public init?(url: String, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
-        if let authorizationURL = NSURL(string: url) {
-            self.init(url: authorizationURL,
+    public init?(authorizationURL: String, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
+        if let authorizationURL = NSURL(string: authorizationURL) {
+            self.init(authorizationURL: authorizationURL,
                       clientId: clientId,
                       clientSecret: clientSecret,
                       useAuthorizationHeader: useAuthorizationHeader)
@@ -159,7 +164,16 @@ public struct ClientCredentialsRequest : Request {
     ///   - useAuthorizationHeader: Whether or not to use the `Authorization` HTTP header. If not used,
     ///                             the `client_id` and `client_secret` parameters will be passed via
     ///                             HTTP request parameters instead.
-    public init(url: NSURL, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
+    public init(authorizationURL: NSURL, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
+        self.authorizationURL = authorizationURL
+        self.clientId = clientId
+        self.clientSecret = clientSecret
+        self.useAuthorizationHeader = useAuthorizationHeader
+    }
+    
+    /// Creates an `NSURLRequest` that can be used to obtain an authentication code, which can be
+    /// exchanged for an access token.
+    func authorizationRequest() -> NSURLRequest {
         var parameters: [String : String] = [:]
         var headers: [String : String] = [:]
         parameters["grant_type"] = "client_credentials"
@@ -170,9 +184,7 @@ public struct ClientCredentialsRequest : Request {
             let credentials = "\(clientId):\(clientSecret)".base64String!
             headers["Authorization"] = "Basic \(credentials)"
         }
-        self.authorizationURL = url
-        self.parameters = parameters
-        self.headers = headers
+        return buildURLRequest(authorizationURL, queryParameters: parameters, headers: headers)!
     }
 }
 
@@ -182,4 +194,39 @@ extension String {
         return self.dataUsingEncoding(NSUTF8StringEncoding)?
                    .base64EncodedStringWithOptions(NSDataBase64EncodingOptions(rawValue: 0))
     }
+}
+
+private func buildURLRequest(url: NSURL,
+                             queryParameters: [String: String] = [:],
+                             formParameters: [String: String] = [:],
+                             headers: [String: String] = [:],
+                             method: String = "GET") -> NSMutableURLRequest?
+{
+    if let urlComponents = NSURLComponents(string: url.absoluteString) {
+        var queryItems: [NSURLQueryItem] = []
+        for (name, value) in queryParameters {
+            guard let encodedValue = value.queryUrlEncodedString else { continue }
+            let component = NSURLQueryItem(name: name, value: encodedValue)
+            queryItems.append(component)
+        }
+        urlComponents.queryItems = queryItems
+        if let url = urlComponents.URL {
+            let request = NSMutableURLRequest(URL: url)
+            for (name, value) in headers {
+                request.setValue(value, forHTTPHeaderField: name)
+            }
+            if formParameters.count > 0 {
+                var encodedParameters: [String] = []
+                for (name, value) in formParameters {
+                    guard let encodedValue = value.queryUrlEncodedString else { continue }
+                    encodedParameters.append("\(name)=\(encodedValue)")
+                }
+                let formBody = encodedParameters.joinWithSeparator("&")
+                request.HTTPBody = formBody.dataUsingEncoding(NSUTF8StringEncoding)
+            }
+            request.HTTPMethod = method
+            return request
+        }
+    }
+    return nil
 }

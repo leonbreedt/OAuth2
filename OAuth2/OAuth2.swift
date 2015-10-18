@@ -24,71 +24,42 @@ import UIKit
 /// Handler called when an OAuth authorization request has completed.
 public typealias AuthorizationCompletionHandler = Response -> Void
 
-/// Defines a response handler for a completed URL request.
-public typealias URLResponseHandler = (NSURLResponse?, NSError?, NSData?) -> Void
-
-/// Defines a request handler that will execute a URL request, and call the response handler
-/// when the request completes.
-public typealias URLRequestHandler = (NSURLRequest, URLResponseHandler) -> Void
-
 /// The entry point into performing OAuth requests in this framework.
 public class OAuth2 {
-    /// Performs an OAuth `authorization_code` flow, calling a completion handler when the request is finished.
-    /// Will redirect the user to the configured `UserAgent` to perform the authentication. The default user agent
-    /// is a modally displayed `OAuthAuthorizationViewController` based implementation, but this can be replaced
-    /// by specifying the `urlProcessor` parameter.
+    /// Performs an OAuth `authorization_code` flow, calling the completion handler when the request is finished.
+    /// Will display a modal `WebViewController` for the user to use when logging into the third party service.
+    /// This view controller will be dismissed when the user clicks cancel, authentication succeeds, or fails.
     /// - Parameters:
-    ///   - request: The request to perform.
-    ///   - authorizationHandler: The handler to call to perform the authorization request. If not specified, opens a modal
-    ///                           `WKWebView`-based handler to allow the user to log in to the service.
-    ///   - tokenHandler: The handler to call to perform the token request. If not specified, uses a default handler.
+    ///   - request: The authorization request to perform.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
-    ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
-    ///                 no notification of completion.
-    ///                 The caller must not make any assumptions about which dispatch queue the completion will be
-    ///                 called on.
+    ///                 (successfully or not). The caller must not make any assumptions about which dispatch queue
+    ///                 it will be called on.
     public static func authorize(
         request: AuthorizationCodeRequest,
-        authorizationHandler: URLRequestHandler? = nil,
-        tokenHandler: URLRequestHandler? = nil,
-        completion: AuthorizationCompletionHandler? = nil)
+        completion: AuthorizationCompletionHandler)
     {
-        guard let authorizationURL = request.authorizationURL else {
-            completion?(.Failure(failure: .WithReason(reason: "authorization URL must be set for Authorization Code request")))
-            return
-        }
-        guard let tokenURL = request.tokenURL else {
-            completion?(.Failure(failure: .WithReason(reason: "token URL must be set for Authorization Code request")))
-            return
-        }
-        
-        let codeCompletionHandler: AuthorizationCompletionHandler = { response in
-            switch response {
-            case .CodeIssued(let code):
-                let tokenRequestHandler = tokenHandler != nil ? tokenHandler! : urlSessionHandler
-                let tokenParameters = request.tokenParameters(code)
-                let tokenRequest = parametrizedUrlRequest(tokenURL, parameters: tokenParameters)
-                print("code received from web browser, calling token endpoint \(tokenURL)...")
-                let wrapperCompletion: AuthorizationCompletionHandler = { response in
-                    print("token received, calling completion")
-                    completion?(response)
-                }
-                performUrlRequest(tokenRequest!, handler: tokenRequestHandler, completion: wrapperCompletion) { urlResponse, data in
-                    print("received token response \(urlResponse) with \(data.length) bytes")
-                    return nil
-                }
-            default:
-                completion?(.Failure(failure: .WithReason(reason: "Expected an OAuth 'code' to be issued, got \(response) instead")))
+        // 1. Obtain an authorization code. This requires firing up a web browser, and having the user log in to it.
+        executeWebViewRequest(request.authorizationRequest(), redirectionURL: request.redirectURL) { queryParameters, error in
+            if error != nil {
+                completion(.Failure(failure: error!))
+                return
             }
-        }
-        
-        let authRequestHandler = authorizationHandler != nil ? authorizationHandler! : webViewHandler
-        let authRequest = parametrizedUrlRequest(authorizationURL, parameters: request.parameters)
-        
-        print("authorizing using \(authorizationURL), calling web browser...")
-        performUrlRequest(authRequest!, handler: authRequestHandler, completion: codeCompletionHandler) { urlResponse, data in
-            print("received auth response \(urlResponse) with \(data.length) bytes")
-            return nil
+            guard let queryParameters = queryParameters else {
+                completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "expected URL query parameters to be present if no error")))
+                return
+            }
+            
+            if let code = queryParameters["code"] {
+                // 2. Issue a token by requesting one from token URL, passing in the received code.
+                executeURLRequest(request.tokenRequest(code)) { data, urlResponse, error in
+                    handleAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
+                }
+            } else if let error = queryParameters["error"] {
+                let message = (queryParameters["error_description"] ?? "").urlDecodedString
+                completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "authorization failed: \(message) (\(error)).")))
+            } else {
+                completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "unexpected response from server, and no 'error' parameter present.")))
+            }
         }
     }
     
@@ -96,8 +67,6 @@ public class OAuth2 {
     /// request has finished. This is a two-legged flow, and no user interaction is required.
     /// - Parameters:
     ///   - request: The request to perform.
-    ///   - authorizationHandler: The handler to call to perform the authorization request. If not specified, uses a
-    ///                           default handler.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
     ///                 no notification of completion.
@@ -107,28 +76,10 @@ public class OAuth2 {
     ///       - response: The `Response` representing the result of the authentication.
     public static func authorize(
         request: ClientCredentialsRequest,
-        authorizationHandler: URLRequestHandler? = nil,
-        completion: AuthorizationCompletionHandler? = nil)
+        completion: AuthorizationCompletionHandler)
     {
-        guard let url = request.authorizationURL else {
-            completion?(.Failure(failure: .WithReason(reason: "authorization URL must be set for Client Credentials request")))
-            return
-        }
-        guard let urlRequest = parametrizedUrlRequest(url, parameters: request.parameters, headers: request.headers) else {
-            completion?(.Failure(failure: .WithReason(reason: "failed to create request for URL \(url)")))
-            return
-        }
-        
-        let handler = authorizationHandler != nil ? authorizationHandler! : urlSessionHandler
-        
-        performUrlRequest(urlRequest, handler: handler, completion: completion) { urlResponse, data in
-            if let jsonString = NSString(data: data, encoding: NSUTF8StringEncoding) as? String,
-                let jsonObject = jsonString.jsonObject {
-                    let authorizationData = try AuthorizationData.decode(jsonObject)
-                    return .Success(data: authorizationData)
-            } else {
-                return .Failure(failure: .WithReason(reason: "failed to parse JSON authorization response"))
-            }
+        executeURLRequest(request.authorizationRequest()) { data, urlResponse, error in
+            handleAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
         }
     }
     
@@ -137,63 +88,74 @@ public class OAuth2 {
     private init() {
     }
     
-    private typealias ResponseParser = (NSURLResponse, NSData) throws -> Response?
-    
-    private static func performUrlRequest(
-        urlRequest: NSURLRequest,
-        handler: URLRequestHandler,
-        completion: AuthorizationCompletionHandler?,
-        responseParser: ResponseParser)
-    {
-        // TODO: user hook for modifying URL request before it is sent.
-        logRequest(urlRequest)
-        handler(urlRequest) { urlResponse, error, data in
-            if error != nil {
-                completion?(.Failure(failure: .WithError(error: error!)))
-            } else if data != nil && urlResponse != nil {
-                self.logResponse(urlResponse as? NSHTTPURLResponse, bodyData: data)
-                
-                guard let statusCode = (urlResponse as? NSHTTPURLResponse)?.statusCode else {
-                    completion?(.Failure(failure: .WithReason(reason: "invalid resonse type: \(urlResponse)")))
-                    return
-                }
-                // TODO: is there an enum somewhere where these codes are kept? what are the "official" codes that can
-                //       be returned by the server according to RFC? what about redirection?
-                if statusCode < 200 || statusCode > 299 {
-                    completion?(.Failure(failure: .WithReason(reason: "server request failed with status \(statusCode)")))
-                    return
-                }
-                do {
-                    // TODO: user hook for processing URL response and giving the thumbs up/down
-                    if let response = try responseParser(urlResponse!, data!) {
-                        completion?(response)
-                    } else {
-                        completion?(.Failure(failure: .WithReason(reason: "failed to parse response data")))
-                    }
-                } catch let error {
-                    completion?(.Failure(failure: .WithReason(reason: "failed to parse response data: \(error)")))
-                }
-            } else {
-                completion?(.Failure(failure: .WithReason(reason: "invalid response")))
-            }
-        }
-    }
-    
-    private static func urlSessionHandler(request: NSURLRequest, completion: URLResponseHandler) {
+    private static func executeURLRequest(request: NSURLRequest, completionHandler: (NSData?, NSURLResponse?, ErrorType?) -> Void) {
+        logRequest(request)
+        
         let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
         let session = NSURLSession(configuration: configuration)
-        let dataTask = session.dataTaskWithRequest(request) { data, urlResponse, error in
-            completion(urlResponse, error, data)
+        
+        let task = session.dataTaskWithRequest(request) { data, response, error in
+            logResponse(response as? NSHTTPURLResponse, bodyData: data)
+            
+            completionHandler(data, response, error)
         }
-        dataTask.resume()
+        task.resume()
     }
     
-    private static func webViewHandler(request: NSURLRequest, completion: URLResponseHandler) {
-//        let controller = WebViewController()
+    private static func executeWebViewRequest(request: NSURLRequest, redirectionURL: NSURL, completionHandler: ([String: String]?, ErrorType?) -> Void) {
+        logRequest(request)
+
+        var controller: WebViewController! = nil
+        
+        controller = WebViewController(request: request, redirectionURL: redirectionURL) { response in
+            controller.dismissViewControllerAnimated(true, completion: nil)
+            controller = nil
+            
+            switch response {
+            case .Completed:
+                completionHandler(nil, AuthorizationFailure.WithReason(reason: "unexpected response from server, no redirection was performed"))
+                break
+            case .Error(let error):
+                completionHandler(nil, error)
+                break
+            case .Redirection(let redirectionURL):
+                completionHandler(redirectionURL.queryParameters, nil)
+                break
+            }
+        }
+        
 #if os(iOS)
-//        UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(controller, animated: true, completion: nil)
+        UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(controller, animated: true, completion: nil)
 #endif
-//        controller.loadRequest(request, completion: completion)
+        
+        controller.loadRequest()
+    }
+    
+    private static func handleAuthorizationDataResponse(data: NSData?, urlResponse: NSURLResponse?, error: ErrorType?, completion: AuthorizationCompletionHandler) {
+        if error != nil {
+            completion(.Failure(failure: error!))
+            return
+        }
+        
+        guard let statusCode = (urlResponse as? NSHTTPURLResponse)?.statusCode else {
+            completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "invalid response: \(urlResponse)")))
+            return
+        }
+        if statusCode < 200 || statusCode > 299 {
+            completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "request failed with status \(statusCode): \(urlResponse)")))
+            return
+        }
+        guard let data = data, let json = NSString(data: data, encoding: NSUTF8StringEncoding) as? String, let jsonObject = json.jsonObject else {
+            completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "failed to parse JSON authorization response")))
+            return
+        }
+        
+        do {
+            let authData = try AuthorizationData.decode(jsonObject)
+            completion(.Success(data: authData))
+        } catch let error {
+            completion(.Failure(failure: error))
+        }
     }
     
     private static func logRequest(urlRequest: NSURLRequest) {
@@ -229,51 +191,7 @@ public class OAuth2 {
         }
     }
     
-    private static func parametrizedUrlRequest(url: NSURL, parameters: [String: String], headers: [String: String] = [:]) -> NSURLRequest? {
-        if let urlComponents = NSURLComponents(string: url.absoluteString) {
-            var queryItems: [NSURLQueryItem] = []
-            for (name, value) in parameters {
-                let component = NSURLQueryItem(name: name, value: value)
-                queryItems.append(component)
-            }
-            urlComponents.queryItems = queryItems
-            if let url = urlComponents.URL {
-                let request = NSMutableURLRequest(URL: url)
-                for (name, value) in headers {
-                    request.setValue(value, forHTTPHeaderField: name)
-                }
-                return request
-            }
-        }
-        return nil
-    }
 }
-
-/*extension Request {
-    /// Converts a `Request` into an `NSURLRequest` for a given URL.
-    ///  Headers and parameters from the `Request` are added to the `NSURLRequest`.
-    /// - Parameters:
-    ///   - url: The URL to use as the base URL for the request.
-    func toNSURLRequestForURL(url: NSURL) -> NSURLRequest? {
-        if let urlComponents = NSURLComponents(string: url.absoluteString) {
-            var queryItems: [NSURLQueryItem] = []
-            for (name, value) in parameters {
-                let component = NSURLQueryItem(name: name, value: value)
-                queryItems.append(component)
-            }
-            urlComponents.queryItems = queryItems
-            if let url = urlComponents.URL {
-                let request = NSMutableURLRequest(URL: url)
-                for (name, value) in headers {
-                    request.setValue(value, forHTTPHeaderField: name)
-                }
-                return request
-            }
-        }
-        return nil
-    }
-}
-*/
 
 extension AuthorizationData {
     /// Decodes authorization data JSON into an `AuthorizationData` object.
@@ -282,10 +200,7 @@ extension AuthorizationData {
         guard let accessToken = dict["access_token"] as? String else { throw AuthorizationDataInvalid.MissingAccessToken }
         let refreshToken = dict["refresh_token"] as? String
         let expiresInSeconds = dict["expires_in"] as? Int
-        return AuthorizationData(
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-            expiresIn: expiresInSeconds)
+        return AuthorizationData(accessToken: accessToken, refreshToken: refreshToken, expiresIn: expiresInSeconds)
     }
 }
 
@@ -296,5 +211,36 @@ extension String {
             return try? NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
         }
         return nil
+    }
+    
+    var urlDecodedString: String {
+        return NSString(string: self).stringByRemovingPercentEncoding?.stringByReplacingOccurrencesOfString("+", withString: " ") ?? self
+    }
+    
+    var queryUrlEncodedString: String? {
+        return NSString(string: self).stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet())
+    }
+}
+
+extension NSURL {
+    var queryParameters : [String: String] {
+        let components = NSURLComponents(string: absoluteString)
+        let parameterDict = components?
+            .queryItems?
+            .filter {$0.value != nil}
+            .map { ($0.name, $0.value!) }
+            .toDictionary { ($0.0, $0.1) } ?? Dictionary<String, String>()
+        return parameterDict
+    }
+}
+
+extension Array {
+    func toDictionary<K, V>(transform: Element -> (K, V)) -> [K: V] {
+        var dict: [K: V] = [:]
+        for item in self {
+            let (key, value) = transform(item)
+            dict[key] = value
+        }
+        return dict
     }
 }

@@ -22,22 +22,68 @@ import Cocoa
 #endif
 import WebKit
 
-/// Controller for displaying a web view and capturing the responses of loading a request.
-public class WebViewController: UIViewController, WKNavigationDelegate {
-    /// The response to the most recent `loadRequest(_:completion:)` call. If the call failed, will be `nil`.
-    public var response: NSURLResponse? = nil
-    /// If the most recent `loadRequest(_:completion:)` call failed, will contain the error describing the reason for failure.
-    public var error: NSError? = nil
+/// Enumerates the possible responses for a web view based request.
+public enum WebViewResponse {
+    /// An error occurred while attempting to load the request.
+    case Error(error: ErrorType)
     
-    private weak var webView: WKWebView!
-    private var activeURL: NSURL? = nil
-    private var activeNavigation: WKNavigation? = nil
-    private var completion: URLResponseHandler? = nil
+    /// Completed, and a redirect was performed.
+    /// - Parameters:
+    ///   - redirectionURL: The full URL (with parameters) that the server redirected to.
+    case Redirection(redirectionURL: NSURL)
+    
+    /// Completed without a redirect. Not supposed to happen.
+    case Completed
+}
+
+/// A completion handler for web view requests.
+public typealias WebViewCompletionHandler = WebViewResponse -> Void
+
+/// Controller for displaying a web view, performing an `NSURLRequest` inside it, 
+/// and capturing redirects to a well-known URL (typical OAuth use case).
+public class WebViewController: UIViewController, WKNavigationDelegate {
+    weak var webView: WKWebView!
+    
+    let request: NSURLRequest!
+    let redirectionURL: NSURL!
+    let completionHandler: WebViewCompletionHandler!
+
+    /// Creates a new `WebViewController` for an `NSURLRequest` and a given redirection URL.
+    /// - Parameters:
+    ///   - request: The URL request that will be loaded when `loadRequest` is called.
+    ///   - redirectionURL: The redirection URL which will trigger a completion if the server attempts to redirect to it.
+    ///   - completionHandler: The handler to call when the request completes (successfully or otherwise).
+    public init(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) {
+        self.request = request
+        self.redirectionURL = redirectionURL
+        self.completionHandler = completionHandler
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    /// Not supported for `WebViewController`.
+    public required init?(coder aDecoder: NSCoder) {
+        self.webView = nil
+        self.request = nil
+        self.redirectionURL = nil
+        self.completionHandler = nil
+        super.init(coder: aDecoder)
+        assertionFailure("init(coder:) is not supported")
+    }
+    
+    /// Loads the web view's `NSURLRequest`, invoking the handler when a redirection attempt
+    /// to the `redirectionURL` is made.
+    public func loadRequest() {
+        webView.loadRequest(request)
+    }
+    
+    // MARK: - UIViewController
     
     public override func loadView() {
         super.loadView()
-        webView = WKWebView(frame: CGRectZero, configuration: WKWebViewConfiguration())
+        let webView = WKWebView(frame: CGRectZero, configuration: WKWebViewConfiguration())
+        webView.navigationDelegate = self
         view.addSubview(webView)
+        self.webView = webView
     }
     
     public override func viewWillLayoutSubviews() {
@@ -45,47 +91,20 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
         webView.frame = view.bounds
     }
     
-    /// Loads a `NSURLRequest`, invoking a callback when loading has finished.
-    public func loadRequest(request: NSURLRequest, completion: URLResponseHandler ) {
-        webView.loadRequest(request)
-        self.completion = completion
-    }
-    
     // MARK: - WKNavigationDelegate
     
-    public func webView(webView: WKWebView, decidePolicyForNavigationResponse navigationResponse: WKNavigationResponse, decisionHandler: (WKNavigationResponsePolicy) -> Void) {
-        if navigationResponse.response.URL == activeURL {
-            print("response is \(navigationResponse.response)")
-            response = navigationResponse.response
+    public func webView(webView: WKWebView, decidePolicyForNavigationAction navigationAction: WKNavigationAction, decisionHandler: (WKNavigationActionPolicy) -> Void) {
+        if let targetURL = navigationAction.request.URL {
+            if targetURL.absoluteString.lowercaseString.hasPrefix(redirectionURL.absoluteString.lowercaseString) {
+                completionHandler(.Redirection(redirectionURL: targetURL))
+                decisionHandler(.Cancel)
+                return
+            }
         }
         decisionHandler(.Allow)
     }
     
-    public func webView(webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
-        activeURL = webView.URL
-        print("redirected to \(activeURL)")
-    }
-    
-  public func webView(webView: WKWebView, didFinishNavigation navigation: WKNavigation!) {
-        if activeNavigation != nil && navigation == activeNavigation {
-            print("expected navigation finished! \(webView.URL)")
-        } else {
-            print("unknown navigation finished! \(webView.URL)")
-        }
-        activeNavigation = nil
-        activeURL = nil
-        completion?(response, error, nil)
-    }
-    
     public func webView(webView: WKWebView, didFailNavigation navigation: WKNavigation!, withError error: NSError) {
-        if activeNavigation != nil && navigation == activeNavigation {
-            print("navigation failed! \(error)")
-        } else {
-            print("unknown navigation failed! \(error)")
-        }
-        activeNavigation = nil
-        activeURL = nil
-        self.error = error
-        completion?(response, error, nil)
-    }
+        completionHandler(.Error(error: error))
+    }    
 }

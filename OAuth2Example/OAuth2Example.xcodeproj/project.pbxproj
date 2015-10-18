@@ -12,9 +12,47 @@
 		2E0A938C1BD210F600B59BBD /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2E0A938A1BD210F600B59BBD /* Main.storyboard */; };
 		2E0A938E1BD210F600B59BBD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2E0A938D1BD210F600B59BBD /* Assets.xcassets */; };
 		2E0A93911BD210F600B59BBD /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 2E0A938F1BD210F600B59BBD /* LaunchScreen.storyboard */; };
-		2EAA86821BD2F5DA000CFDC3 /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EAA86811BD2F5DA000CFDC3 /* OAuth2.framework */; };
-		2EAA86831BD2F5DA000CFDC3 /* OAuth2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2EAA86811BD2F5DA000CFDC3 /* OAuth2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		2EAA86931BD2F7AE000CFDC3 /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EAA868C1BD2F786000CFDC3 /* OAuth2.framework */; };
+		2EAA86941BD2F7AE000CFDC3 /* OAuth2.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 2EAA868C1BD2F786000CFDC3 /* OAuth2.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2EAA868B1BD2F786000CFDC3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2EAA86841BD2F786000CFDC3 /* OAuth2.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2EDB76721BCA237C001C016E;
+			remoteInfo = "OAuth2-iOS";
+		};
+		2EAA868D1BD2F786000CFDC3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2EAA86841BD2F786000CFDC3 /* OAuth2.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2EDB767C1BCA237C001C016E;
+			remoteInfo = "OAuth2-iOSTests";
+		};
+		2EAA868F1BD2F786000CFDC3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2EAA86841BD2F786000CFDC3 /* OAuth2.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2EDB76911BCA23E8001C016E;
+			remoteInfo = "OAuth2-OSX";
+		};
+		2EAA86911BD2F786000CFDC3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2EAA86841BD2F786000CFDC3 /* OAuth2.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 2EDB769A1BCA23E8001C016E;
+			remoteInfo = "OAuth2-OSXTests";
+		};
+		2EAA86951BD2F7AE000CFDC3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2EAA86841BD2F786000CFDC3 /* OAuth2.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 2EDB76711BCA237C001C016E;
+			remoteInfo = "OAuth2-iOS";
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		2E0A939E1BD2113D00B59BBD /* Embed Frameworks */ = {
@@ -23,7 +61,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				2EAA86831BD2F5DA000CFDC3 /* OAuth2.framework in Embed Frameworks */,
+				2EAA86941BD2F7AE000CFDC3 /* OAuth2.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -38,7 +76,7 @@
 		2E0A938D1BD210F600B59BBD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2E0A93901BD210F600B59BBD /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		2E0A93921BD210F600B59BBD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		2EAA86811BD2F5DA000CFDC3 /* OAuth2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; name = OAuth2.framework; path = "/Users/ljb/Library/Developer/Xcode/DerivedData/OAuth2-cqgbiujbxnpvqkclrwncofgnefxm/Build/Products/Debug-iphoneos/OAuth2.framework"; sourceTree = "<absolute>"; };
+		2EAA86841BD2F786000CFDC3 /* OAuth2.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = OAuth2.xcodeproj; path = ../OAuth2.xcodeproj; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -46,7 +84,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2EAA86821BD2F5DA000CFDC3 /* OAuth2.framework in Frameworks */,
+				2EAA86931BD2F7AE000CFDC3 /* OAuth2.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,9 +124,20 @@
 		2E0A939A1BD2112300B59BBD /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				2EAA86811BD2F5DA000CFDC3 /* OAuth2.framework */,
+				2EAA86841BD2F786000CFDC3 /* OAuth2.xcodeproj */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		2EAA86851BD2F786000CFDC3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2EAA868C1BD2F786000CFDC3 /* OAuth2.framework */,
+				2EAA868E1BD2F786000CFDC3 /* OAuth2Tests.xctest */,
+				2EAA86901BD2F786000CFDC3 /* OAuth2.framework */,
+				2EAA86921BD2F786000CFDC3 /* OAuth2Tests.xctest */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -106,6 +155,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				2EAA86961BD2F7AE000CFDC3 /* PBXTargetDependency */,
 			);
 			name = OAuth2Example;
 			productName = OAuth2Example;
@@ -137,12 +187,49 @@
 			mainGroup = 2E0A937A1BD210F600B59BBD;
 			productRefGroup = 2E0A93841BD210F600B59BBD /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 2EAA86851BD2F786000CFDC3 /* Products */;
+					ProjectRef = 2EAA86841BD2F786000CFDC3 /* OAuth2.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				2E0A93821BD210F600B59BBD /* OAuth2Example */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		2EAA868C1BD2F786000CFDC3 /* OAuth2.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = OAuth2.framework;
+			remoteRef = 2EAA868B1BD2F786000CFDC3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		2EAA868E1BD2F786000CFDC3 /* OAuth2Tests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = OAuth2Tests.xctest;
+			remoteRef = 2EAA868D1BD2F786000CFDC3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		2EAA86901BD2F786000CFDC3 /* OAuth2.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = OAuth2.framework;
+			remoteRef = 2EAA868F1BD2F786000CFDC3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		2EAA86921BD2F786000CFDC3 /* OAuth2Tests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = OAuth2Tests.xctest;
+			remoteRef = 2EAA86911BD2F786000CFDC3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		2E0A93811BD210F600B59BBD /* Resources */ = {
@@ -168,6 +255,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2EAA86961BD2F7AE000CFDC3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "OAuth2-iOS";
+			targetProxy = 2EAA86951BD2F7AE000CFDC3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		2E0A938A1BD210F600B59BBD /* Main.storyboard */ = {
@@ -274,6 +369,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				FRAMEWORK_SEARCH_PATHS = "";
 				INFOPLIST_FILE = OAuth2Example/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -286,6 +382,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				EMBEDDED_CONTENT_CONTAINS_SWIFT = YES;
 				FRAMEWORK_SEARCH_PATHS = "";
 				INFOPLIST_FILE = OAuth2Example/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
