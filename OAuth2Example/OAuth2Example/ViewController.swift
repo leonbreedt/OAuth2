@@ -51,7 +51,7 @@ class ViewController: UIViewController {
         OAuth2.authorize(request) { response in
             switch response {
             case .Success(let data):
-                print("authorization completed with data \(data)")
+                print("authorization completed, access token is \(data.accessToken), expires in \(data.expiresInSeconds), refresh token is '\(data.refreshToken ?? "N/A")'")
                 break
             default:
                 print("authorization failed with response \(response)")

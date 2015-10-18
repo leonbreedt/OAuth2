@@ -33,13 +33,13 @@ public enum Response {
 /// Contains data returned by the server for a successful authorization.
 public struct AuthorizationData {
     /// The token that can be used to access the resources protected by OAuth.
-    let accessToken: String
+    public let accessToken: String
     
     /// The refresh token that can be used to obtain a replacement token when the access token expires.
-    let refreshToken: String?
+    public let refreshToken: String?
     
     /// The amount of time, in seconds, until the access token expires.
-    let expiresInSeconds: Int?
+    public let expiresInSeconds: Int?
 }
 
 /// Enumerates the types of failures that can be encountered when attempting to parse authorization data.
