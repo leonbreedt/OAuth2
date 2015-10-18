@@ -200,7 +200,7 @@ extension AuthorizationData {
         guard let accessToken = dict["access_token"] as? String else { throw AuthorizationDataInvalid.MissingAccessToken }
         let refreshToken = dict["refresh_token"] as? String
         let expiresInSeconds = dict["expires_in"] as? Int
-        return AuthorizationData(accessToken: accessToken, refreshToken: refreshToken, expiresIn: expiresInSeconds)
+        return AuthorizationData(accessToken: accessToken, refreshToken: refreshToken, expiresInSeconds: expiresInSeconds)
     }
 }
 

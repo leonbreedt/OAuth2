@@ -35,11 +35,11 @@ public struct AuthorizationData {
     /// The token that can be used to access the resources protected by OAuth.
     let accessToken: String
     
-    /// The refresh token that can be used to obtain a replacement access token when it expires.
+    /// The refresh token that can be used to obtain a replacement token when the access token expires.
     let refreshToken: String?
     
     /// The amount of time, in seconds, until the access token expires.
-    let expiresIn: Int?
+    let expiresInSeconds: Int?
 }
 
 /// Enumerates the types of failures that can be encountered when attempting to parse authorization data.
