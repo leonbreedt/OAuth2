@@ -44,22 +44,62 @@ public struct AuthorizationData {
 
 /// Enumerates the types of failures that can be encountered when attempting to parse authorization data.
 public enum AuthorizationDataInvalid : ErrorType {
-    /// The JSON is malformed or not valid JSON
-    case MalformedJSON
-    /// The `access_token` field is missing from the JSON response.
+    /// The data is not available or empty.
+    case Empty
+    
+    /// The data is not valid UTF-8.
+    case NotUTF8
+    
+    /// The data is not JSON, or is malformed with syntax errors.
+    case MalformedJSON(error: ErrorType)
+    
+    /// The JSON is valid, but was not an object when it was expected to be.
+    case NotJSONObject
+
+    /// The JSON is a valid JSON object, but is missing the `access_token` field.
     case MissingAccessToken
 }
 
 /// Contains information about the cause of an authorization failure.
 public enum AuthorizationFailure : ErrorType {
+    /// Expected parameters were not present in the URI that the server redirected to.
+    case MissingParametersInRedirectionURI
+    
+    /// Invalid HTTP status code from server.
+    case InvalidResponseStatusCode
+    
+    /// Represents the OAuth 2.0 protocol error `invalid_request`.
+    case OAuthInvalidRequest(description: String?)
+
+    /// Represents the OAuth 2.0 protocol error `unauthorized_client`.
+    case OAuthUnauthorizedClient(description: String?)
+    
+    /// Represents the OAuth 2.0 protocol error `access_denied`.
+    case OAuthAccessDenied(description: String?)
+    
+    /// Represents the OAuth 2.0 protocol error `unsupported_response_type`.
+    case OAuthUnsupportedResponseType(description: String?)
+    
+    /// Represents the OAuth 2.0 protocol error `invalid_scope`.
+    case OAuthInvalidScope(description: String?)
+    
+    /// Represents the OAuth 2.0 protocol error `server_error`.
+    case OAuthServerError(description: String?)
+    
+    /// Represents the OAuth 2.0 protocol error `temporarily_unavailable`.
+    case OAuthTemporarilyUnavailable(description: String?)
+    
+    /// Server returned a string in the `error` parameter that is not listed in the OAuth RFC.
+    case OAuthUnknownError(description: String?)
+    
     /// An authorization failure having a `String` describing the cause of the failure.
     /// - Parameters:
     ///   - reason: A description of the cause of the failure.
-    case WithReason(reason: String)
+    case WithReason2(reason: String)
     
     /// An authorization failure having a `String` describing the cause of the failure.
     /// - Parameters:
     ///   - message: A short description of the cause of the failure.
     ///   - message: A human-readable description of the cause of the failure.
-    case WithDetails(message: String, details: String)
+    case WithDetails2(message: String, details: String)
 }

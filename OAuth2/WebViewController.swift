@@ -24,16 +24,16 @@ import WebKit
 
 /// Enumerates the possible responses for a web view based request.
 public enum WebViewResponse {
-    /// An error occurred while attempting to load the request.
+    /// A general error occurred while attempting to load the request.
     case Error(error: ErrorType)
+
+    /// An error occurred while attempting to load the request, and the HTTP response is available for further consultation.
+    case ResponseError(error: ErrorType, response: NSHTTPURLResponse)
     
     /// Completed, and a redirect was performed.
     /// - Parameters:
     ///   - redirectionURL: The full URL (with parameters) that the server redirected to.
     case Redirection(redirectionURL: NSURL)
-    
-    /// Completed without a redirect. Not supposed to happen.
-    case Completed
 }
 
 /// A completion handler for web view requests.
@@ -104,7 +104,19 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
         decisionHandler(.Allow)
     }
     
+    public func webView(webView: WKWebView, decidePolicyForNavigationResponse navigationResponse: WKNavigationResponse, decisionHandler: (WKNavigationResponsePolicy) -> Void) {
+        if let httpResponse = navigationResponse.response as? NSHTTPURLResponse {
+            if httpResponse.statusCode >= 400 || httpResponse.statusCode < 200 {
+                // Probably, something is bad with the request, server did not like it.
+                completionHandler(.ResponseError(error: AuthorizationFailure.InvalidResponseStatusCode, response: httpResponse))
+                decisionHandler(.Cancel)
+                return
+            }
+        }
+        decisionHandler(.Allow)
+    }
+    
     public func webView(webView: WKWebView, didFailNavigation navigation: WKNavigation!, withError error: NSError) {
         completionHandler(.Error(error: error))
-    }    
+    }
 }

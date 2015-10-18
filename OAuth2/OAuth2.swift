@@ -45,7 +45,7 @@ public class OAuth2 {
                 return
             }
             guard let queryParameters = queryParameters else {
-                completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "expected URL query parameters to be present if no error")))
+                completion(.Failure(failure: AuthorizationFailure.MissingParametersInRedirectionURI))
                 return
             }
             
@@ -55,10 +55,10 @@ public class OAuth2 {
                     handleAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
                 }
             } else if let error = queryParameters["error"] {
-                let message = (queryParameters["error_description"] ?? "").urlDecodedString
-                completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "authorization failed: \(message) (\(error)).")))
+                let failure = failureForOAuthError(error, description: queryParameters["error_description"]?.urlDecodedString)
+                completion(.Failure(failure: failure))
             } else {
-                completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "unexpected response from server, and no 'error' parameter present.")))
+                completion(.Failure(failure: AuthorizationFailure.MissingParametersInRedirectionURI))
             }
         }
     }
@@ -112,14 +112,15 @@ public class OAuth2 {
             controller = nil
             
             switch response {
-            case .Completed:
-                completionHandler(nil, AuthorizationFailure.WithReason(reason: "unexpected response from server, no redirection was performed"))
-                break
             case .Error(let error):
                 completionHandler(nil, error)
                 break
             case .Redirection(let redirectionURL):
                 completionHandler(redirectionURL.queryParameters, nil)
+                break
+            case .ResponseError(let error, let httpResponse):
+                logResponse(httpResponse, bodyData: nil)
+                completionHandler(nil, error)
                 break
             }
         }
@@ -136,25 +137,60 @@ public class OAuth2 {
             completion(.Failure(failure: error!))
             return
         }
+
+        assert(urlResponse is NSHTTPURLResponse)
         
-        guard let statusCode = (urlResponse as? NSHTTPURLResponse)?.statusCode else {
-            completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "invalid response: \(urlResponse)")))
+        let httpResponse = urlResponse as! NSHTTPURLResponse
+        if httpResponse.statusCode < 200 || httpResponse.statusCode > 299 {
+            completion(.Failure(failure: AuthorizationFailure.InvalidResponseStatusCode))
             return
         }
-        if statusCode < 200 || statusCode > 299 {
-            completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "request failed with status \(statusCode): \(urlResponse)")))
+        
+        guard let data = data else {
+            completion(.Failure(failure: AuthorizationDataInvalid.Empty))
             return
         }
-        guard let data = data, let json = NSString(data: data, encoding: NSUTF8StringEncoding) as? String, let jsonObject = json.jsonObject else {
-            completion(.Failure(failure: AuthorizationFailure.WithReason(reason: "failed to parse JSON authorization response")))
+        
+        guard let utf8String = NSString(data: data, encoding: NSUTF8StringEncoding) as? String else {
+            completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
             return
         }
         
         do {
-            let authData = try AuthorizationData.decode(jsonObject)
-            completion(.Success(data: authData))
-        } catch let error {
-            completion(.Failure(failure: error))
+            guard let jsonObject = try utf8String.jsonObject() else {
+                completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
+                return
+            }
+            do {
+                let authData = try AuthorizationData.decode(jsonObject)
+                completion(.Success(data: authData))
+            } catch let error {
+                completion(.Failure(failure: error))
+            }
+        }
+        catch let parseError {
+            completion(.Failure(failure: AuthorizationDataInvalid.MalformedJSON(error: parseError)))
+        }
+    }
+    
+    private static func failureForOAuthError(error: String, description: String?) -> AuthorizationFailure {
+        switch error {
+        case "invalid_request":
+            return AuthorizationFailure.OAuthInvalidRequest(description: description)
+        case "unauthorized_client":
+            return AuthorizationFailure.OAuthUnauthorizedClient(description: description)
+        case "access_denied":
+            return AuthorizationFailure.OAuthAccessDenied(description: description)
+        case "unsupported_response_type":
+            return AuthorizationFailure.OAuthUnsupportedResponseType(description: description)
+        case "invalid_scope":
+            return AuthorizationFailure.OAuthInvalidScope(description: description)
+        case "server_error":
+            return AuthorizationFailure.OAuthServerError(description: description)
+        case "temporarily_unavailable":
+            return AuthorizationFailure.OAuthTemporarilyUnavailable(description: description)
+        default:
+            return AuthorizationFailure.OAuthUnknownError(description: "Unknown error: \(description) (\(error))")
         }
     }
     
@@ -196,7 +232,7 @@ public class OAuth2 {
 extension AuthorizationData {
     /// Decodes authorization data JSON into an `AuthorizationData` object.
     public static func decode(json: AnyObject) throws -> AuthorizationData {
-        guard let dict = json as? NSDictionary else { throw AuthorizationDataInvalid.MalformedJSON }
+        guard let dict = json as? NSDictionary else { throw AuthorizationDataInvalid.NotJSONObject }
         guard let accessToken = dict["access_token"] as? String else { throw AuthorizationDataInvalid.MissingAccessToken }
         let refreshToken = dict["refresh_token"] as? String
         let expiresInSeconds = dict["expires_in"] as? Int
@@ -206,9 +242,9 @@ extension AuthorizationData {
 
 extension String {
     /// Attempts to parse this string as JSON and returns the parsed object if successful.
-    var jsonObject: AnyObject? {
+    func jsonObject() throws -> AnyObject? {
         if let data = dataUsingEncoding(NSUTF8StringEncoding) {
-            return try? NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
+            return try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
         }
         return nil
     }
