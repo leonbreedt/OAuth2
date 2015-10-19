@@ -49,7 +49,16 @@ public struct AuthorizationData {
         guard let dict = json as? NSDictionary else { throw AuthorizationDataInvalid.NotJSONObject }
         guard let accessToken = dict["access_token"] as? String else { throw AuthorizationDataInvalid.MissingAccessTokenField }
         let refreshToken = dict["refresh_token"] as? String
-        let expiresInSeconds = dict["expires_in"] as? Int
+        var expiresInSeconds = (dict["expires_in"] as? Int)
+        
+        // Some backends put it as a String in "expires" field. What is an RFC?
+        if expiresInSeconds == nil {
+            let expires = dict["expires"] as? String
+            if expires != nil {
+                expiresInSeconds = Int(expires!)
+            }
+        }
+        
         return AuthorizationData(accessToken: accessToken, refreshToken: refreshToken, expiresInSeconds: expiresInSeconds)
     }
 }

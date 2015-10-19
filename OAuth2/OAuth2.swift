@@ -152,7 +152,8 @@ public class OAuth2 {
 
         assert(urlResponse is NSHTTPURLResponse)
         
-        var jsonIsErrorObject = false
+        
+        var responseIsServerRejectionError = false
         
         let httpResponse = urlResponse as! NSHTTPURLResponse
         switch httpResponse.statusCode {
@@ -163,12 +164,21 @@ public class OAuth2 {
         case 400:
             // This is a `client_credentials` response (`authorization_code` would have communicated the error via a redirect).
             // Bail out.
-            jsonIsErrorObject = true
+            responseIsServerRejectionError = true
             break
         default:
             // Unexpected server response, bail out and supply response to caller for further diagnostics.
             completion(.Failure(failure: AuthorizationFailure.UnexpectedServerResponse(response: httpResponse)))
             return
+        }
+        
+        var contentIsJson = true
+        let contentType = httpResponse.allHeaderFields["Content-Type"] as? String
+        switch contentType {
+        case .Some("text/json"), .Some("application/json"):
+            break
+        default:
+            contentIsJson = false
         }
         
         guard let data = data else {
@@ -182,24 +192,48 @@ public class OAuth2 {
         }
         
         do {
-            if jsonIsErrorObject {
-                guard let jsonObject = try utf8String.parseIntoJSONObject() else {
-                    completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
-                    return
+            if responseIsServerRejectionError {
+                var object: AnyObject?
+                if contentIsJson {
+                    object = try utf8String.parseIntoJSONObject()
+                    if object == nil {
+                        completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
+                        return
+                    }
+                } else {
+                    // Backends like Facebook may give us non-RFC-complaint form data response as plain text. Accomodate this.
+                    object = utf8String.parseFormDataIntoDictionary()
+                    if object == nil {
+                        completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
+                        return
+                    }
                 }
+                
                 do {
-                    let errorData = try ErrorData.decode(jsonObject)
+                    let errorData = try ErrorData.decode(object!)
                     completion(.Failure(failure: failureForOAuthError(errorData.error, description: errorData.errorDescription)))
                 } catch let error {
                     completion(.Failure(failure: error))
                 }
             } else {
-                guard let jsonObject = try utf8String.parseIntoJSONObject() else {
-                    completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
-                    return
+                var object: AnyObject?
+                if contentIsJson {
+                    object = try utf8String.parseIntoJSONObject()
+                    if object == nil {
+                        completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
+                        return
+                    }
+                } else {
+                    // Backends like Facebook may give us non-RFC-complaint form data response as plain text. Accomodate this.
+                    object = utf8String.parseFormDataIntoDictionary()
+                    if object == nil {
+                        completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
+                        return
+                    }
                 }
+                
                 do {
-                    let authData = try AuthorizationData.decode(jsonObject)
+                    let authData = try AuthorizationData.decode(object!)
                     completion(.Success(data: authData))
                 } catch let error {
                     completion(.Failure(failure: error))
@@ -278,6 +312,17 @@ extension String {
             return try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
         }
         return nil
+    }
+    
+    /// Parses form data into a dictionary.
+    func parseFormDataIntoDictionary() -> AnyObject {
+        var dict: [String: String] = [:]
+        for field in componentsSeparatedByString("&") {
+            let kvp = field.componentsSeparatedByString("=")
+            if kvp.count != 2 { continue }
+            dict[kvp[0]] = kvp[1].urlDecodedString
+        }
+        return dict
     }
     
     /// Decodes a URL encoded string, as well as replacing any occurrences of `+` with a space. Returns the original string

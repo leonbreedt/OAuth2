@@ -22,6 +22,7 @@ class ViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        OAuth2.loggingEnabled = true
     }
     
     // MARK: - Actions
@@ -33,9 +34,17 @@ class ViewController: UIViewController {
     }
 
     @IBAction
-    func authenticateWithTwitter()
+    func authenticateWithFacebook()
     {
-        print("authenticating with Twitter")
+        print("authenticating with Facebook")
+        // You need to set up the redirect URL in your app settings before it will work.
+        let request = AuthorizationCodeRequest(
+            authorizationURL: "https://graph.facebook.com/oauth/authorize",
+            tokenURL: "https://graph.facebook.com/oauth/access_token",
+            clientId: "YOUR-APP-ID-HERE",
+            clientSecret: "YOUR-APP-SECRET-HERE",
+            redirectURL: "YOUR-REDIRECT-URI-HERE")!
+        OAuth2.authorize(request, completion: printOAuthResponse)
     }
     
     @IBAction
@@ -47,15 +56,17 @@ class ViewController: UIViewController {
             tokenURL: "https://api.soundcloud.com/oauth2/token",
             clientId: "YOUR-ID-HERE",
             clientSecret: "YOUR-SECRET-HERE",
-            redirectURL: "YOUR-URL-HERE")!
-        OAuth2.authorize(request) { response in
-            switch response {
-            case .Success(let data):
-                print("authorization completed, access token is \(data.accessToken), expires in \(data.expiresInSeconds), refresh token is '\(data.refreshToken)'")
-                break
-            default:
-                print("authorization failed with response \(response)")
-            }
+            redirectURL: "http://localhost/oauth")!
+        OAuth2.authorize(request, completion: printOAuthResponse)
+    }
+    
+    func printOAuthResponse(response: Response) {
+        switch response {
+        case .Success(let data):
+            print("authorization completed, access token is \(data.accessToken), expires in \(data.expiresInSeconds), refresh token is '\(data.refreshToken)'")
+            break
+        default:
+            print("authorization failed with response \(response)")
         }
     }
 }

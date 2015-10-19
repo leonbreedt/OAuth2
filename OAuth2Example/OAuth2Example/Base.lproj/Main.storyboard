@@ -28,12 +28,12 @@
                                             <action selector="authenticateWithGoogle" destination="BYZ-38-t0r" eventType="touchUpInside" id="wO3-UR-OnF"/>
                                         </connections>
                                     </button>
-                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="lVt-e2-QX3">
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="lVt-e2-QX3" userLabel="Facebook">
                                         <rect key="frame" x="0.0" y="194" width="560" height="193"/>
                                         <animations/>
-                                        <state key="normal" title="Twitter"/>
+                                        <state key="normal" title="Facebook"/>
                                         <connections>
-                                            <action selector="authenticateWithTwitter" destination="BYZ-38-t0r" eventType="touchUpInside" id="S5c-pl-9Gg"/>
+                                            <action selector="authenticateWithFacebook" destination="BYZ-38-t0r" eventType="touchUpInside" id="emt-kj-uVh"/>
                                         </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hnI-7d-AIS">

@@ -35,7 +35,7 @@ class OAuth2Tests: XCTestCase {
     
     func testAuthorizationCodeSuccessfulAuth() {
         setUpWebViewResponse(["code": "abc123"], error: nil)
-        setUpURLResponse(200, url: tokenURL, body: ["access_token": accessToken].toJSONString())
+        setUpURLResponse(200, url: tokenURL, body: ["access_token": accessToken].toJSONString(), headers: ["Content-Type": "application/json"])
         
         let request = AuthorizationCodeRequest(authorizationURL: authorizationURL,
                                                tokenURL: tokenURL,
@@ -86,7 +86,7 @@ class OAuth2Tests: XCTestCase {
     }
     
     func testClientCredentialsSuccessfulAuth() {
-        setUpURLResponse(200, url: authorizationURL, body: ["access_token": accessToken].toJSONString())
+        setUpURLResponse(200, url: authorizationURL, body: ["access_token": accessToken].toJSONString(), headers: ["Content-Type": "application/json"])
         
         let request = ClientCredentialsRequest(authorizationURL: authorizationURL, clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
@@ -105,7 +105,7 @@ class OAuth2Tests: XCTestCase {
     }
     
     func testClientCredentialsServerRejectedAuth() {
-        setUpURLResponse(400, url: authorizationURL, body: ["error": "access_denied", "error_description": "internal error"].toJSONString())
+        setUpURLResponse(400, url: authorizationURL, body: ["error": "access_denied", "error_description": "internal error"].toJSONString(), headers: ["Content-Type": "application/json"])
         
         let request = ClientCredentialsRequest(authorizationURL: authorizationURL, clientId: clientId, clientSecret: clientSecret)!
         var response: Response!

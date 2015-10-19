@@ -79,15 +79,15 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
     
     public override func loadView() {
         super.loadView()
+        
         let webView = WKWebView(frame: CGRectZero, configuration: WKWebViewConfiguration())
         webView.navigationDelegate = self
+        webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
+        let heightConstraint = NSLayoutConstraint(item: webView, attribute: .Height, relatedBy: .Equal, toItem: view, attribute: .Height, multiplier: 1, constant: 0)
+        let widthConstraint = NSLayoutConstraint(item: webView, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 1, constant: 0)
+        view.addConstraints([heightConstraint, widthConstraint])
         self.webView = webView
-    }
-    
-    public override func viewWillLayoutSubviews() {
-        super.viewWillLayoutSubviews()
-        webView.frame = view.bounds
     }
     
     // MARK: - WKNavigationDelegate
@@ -105,7 +105,7 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
     
     public func webView(webView: WKWebView, decidePolicyForNavigationResponse navigationResponse: WKNavigationResponse, decisionHandler: (WKNavigationResponsePolicy) -> Void) {
         if let httpResponse = navigationResponse.response as? NSHTTPURLResponse {
-            if httpResponse.statusCode >= 400 || httpResponse.statusCode < 200 {
+            if httpResponse.statusCode != 200 {
                 // Probably, something is bad with the request, server did not like it.
                 // Forward the details on so someone else can do something meaningful with it.
                 completionHandler(.ResponseError(response: httpResponse))
