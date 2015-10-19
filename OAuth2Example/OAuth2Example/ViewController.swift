@@ -31,13 +31,22 @@ class ViewController: UIViewController {
     func authenticateWithGoogle()
     {
         print("authenticating with Google")
+        // You need to set up the redirect URL when setting up the OAuth client in Google's developer console.
+        let request = AuthorizationCodeRequest(
+            authorizationURL: "https://accounts.google.com/o/oauth2/auth",
+            tokenURL: "https://www.googleapis.com/oauth2/v3/token",
+            clientId: "YOUR-APP-ID-HERE",
+            clientSecret: "YOUR-APP-SECRET-HERE",
+            redirectURL: "YOUR-REDIRECT-URI-HERE",
+            scope: "email")!
+        OAuth2.authorize(request, completion: printOAuthResponse)
     }
 
     @IBAction
     func authenticateWithFacebook()
     {
         print("authenticating with Facebook")
-        // You need to set up the redirect URL in your app settings before it will work.
+        // You need to set up the redirect URL in your app settings in Facebook's App Console before it will work.
         let request = AuthorizationCodeRequest(
             authorizationURL: "https://graph.facebook.com/oauth/authorize",
             tokenURL: "https://graph.facebook.com/oauth/access_token",

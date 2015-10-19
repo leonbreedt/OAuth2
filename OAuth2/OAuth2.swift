@@ -173,12 +173,10 @@ public class OAuth2 {
         }
         
         var contentIsJson = true
-        let contentType = httpResponse.allHeaderFields["Content-Type"] as? String
-        switch contentType {
-        case .Some("text/json"), .Some("application/json"):
-            break
-        default:
-            contentIsJson = false
+        if let contentType = httpResponse.allHeaderFields["Content-Type"] as? String {
+            if !contentType.hasPrefix("text/json") && !contentType.hasPrefix("application/json") {
+                contentIsJson = false
+            }
         }
         
         guard let data = data else {
