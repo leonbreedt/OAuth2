@@ -45,9 +45,9 @@ class ViewController: UIViewController {
         let request = AuthorizationCodeRequest(
             authorizationURL: "https://soundcloud.com/connect",
             tokenURL: "https://api.soundcloud.com/oauth2/token",
-            clientId: "cb4d8af97ae76cb73eb803b1d6982297",
-            clientSecret: "6175009e3a49a6d985c5f32df8ba7365",
-            redirectURL: "https://sector42.com/pocketcloud/oauth")!
+            clientId: "YOUR-ID-HERE",
+            clientSecret: "YOUR-SECRET-HERE",
+            redirectURL: "YOUR-URL-HERE")!
         OAuth2.authorize(request) { response in
             switch response {
             case .Success(let data):
