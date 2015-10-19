@@ -27,23 +27,24 @@ public typealias AuthorizationCompletionHandler = Response -> Void
 /// The entry point into performing OAuth requests in this framework.
 public class OAuth2 {
     /// Performs an OAuth `authorization_code` flow, calling the completion handler when the request is finished.
-    /// Will display a modal `WebViewController` for the user to use when logging into the third party service.
-    /// This view controller will be dismissed when the user clicks cancel, authentication succeeds, or fails.
+    /// Will present a modal web view controller through which the user will log in to the target service.
+    /// This view controller will be dismissed when the user clicks cancel, authentication succeeds or authentication fails.
     /// - Parameters:
     ///   - request: The authorization request to perform.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
-    ///                 (successfully or not). The caller must not make any assumptions about which dispatch queue
-    ///                 it will be called on.
+    ///                 (successfully or not). The caller must not make any assumptions about
+    ///                 which dispatch queue the completion will be called on.
     public static func authorize(
         request: AuthorizationCodeRequest,
         completion: AuthorizationCompletionHandler)
     {
         // 1. Obtain an authorization code. This requires firing up a web browser, and having the user log in to it.
-        executeWebViewRequest(request.authorizationRequest(), redirectionURL: request.redirectURL) { queryParameters, error in
+        webViewRequestHook(request.authorizationRequest(), redirectionURL: request.redirectURL) { queryParameters, error in
             if error != nil {
                 completion(.Failure(failure: error!))
                 return
             }
+            
             guard let queryParameters = queryParameters else {
                 completion(.Failure(failure: AuthorizationFailure.MissingParametersInRedirectionURI))
                 return
@@ -51,7 +52,7 @@ public class OAuth2 {
             
             if let code = queryParameters["code"] {
                 // 2. Issue a token by requesting one from token URL, passing in the received code.
-                executeURLRequest(request.tokenRequest(code)) { data, urlResponse, error in
+                urlRequestHook(request.tokenRequest(code)) { data, urlResponse, error in
                     handleAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
                 }
             } else if let error = queryParameters["error"] {
@@ -64,24 +65,33 @@ public class OAuth2 {
     }
     
     /// Performs an OAuth `client_credentials` flow, calling a completion handler when the
-    /// request has finished. This is a two-legged flow, and no user interaction is required.
+    /// request has finished. No user interaction is required for this flow.
     /// - Parameters:
-    ///   - request: The request to perform.
+    ///   - request: The authorization request to perform.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
-    ///                 (successfully or not). May be set to `nil`, in which case the caller will receive
-    ///                 no notification of completion.
-    ///                 The caller must not make any assumptions about which dispatch queue the completion will be
-    ///                 called on.
-    ///     - Parameters:
-    ///       - response: The `Response` representing the result of the authentication.
+    ///                 (successfully or not). The caller must not make any assumptions about 
+    ///                 which dispatch queue the completion will be called on.
     public static func authorize(
         request: ClientCredentialsRequest,
         completion: AuthorizationCompletionHandler)
     {
-        executeURLRequest(request.authorizationRequest()) { data, urlResponse, error in
+        urlRequestHook(request.authorizationRequest()) { data, urlResponse, error in
             handleAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
         }
     }
+    
+    /// Whether or not HTTP requests and responses will be logged.
+    public static var loggingEnabled: Bool = false
+    
+    // MARK: - Test hooks
+    
+    typealias URLRequestCompletionHandler = (NSData?, NSURLResponse?, ErrorType?) -> Void
+    typealias URLRequestHookType = (NSURLRequest, completionHandler: URLRequestCompletionHandler) -> Void
+    typealias WebViewRequestCompletionHandler = ([String: String]?, ErrorType?) -> Void
+    typealias WebViewRequestHookType = (NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewRequestCompletionHandler) -> Void
+    
+    static var urlRequestHook: URLRequestHookType = OAuth2.executeURLRequest
+    static var webViewRequestHook: WebViewRequestHookType = OAuth2.executeWebViewRequest
     
     // MARK: - Private
     
@@ -112,21 +122,23 @@ public class OAuth2 {
             controller = nil
             
             switch response {
-            case .Error(let error):
+            case .LoadError(let error):
                 completionHandler(nil, error)
                 break
             case .Redirection(let redirectionURL):
                 completionHandler(redirectionURL.queryParameters, nil)
                 break
-            case .ResponseError(let error, let httpResponse):
+            case .ResponseError(let httpResponse):
                 logResponse(httpResponse, bodyData: nil)
-                completionHandler(nil, error)
+                completionHandler(nil, AuthorizationFailure.UnexpectedServerResponse(response: httpResponse))
                 break
             }
         }
         
 #if os(iOS)
         UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(controller, animated: true, completion: nil)
+#elseif os(OSX)
+    
 #endif
         
         controller.loadRequest()
@@ -140,9 +152,22 @@ public class OAuth2 {
 
         assert(urlResponse is NSHTTPURLResponse)
         
+        var jsonIsErrorObject = false
+        
         let httpResponse = urlResponse as! NSHTTPURLResponse
-        if httpResponse.statusCode < 200 || httpResponse.statusCode > 299 {
-            completion(.Failure(failure: AuthorizationFailure.InvalidResponseStatusCode))
+        switch httpResponse.statusCode {
+        case 200:
+            // Either this is a `client_credentials` response containing the JSON, or this is a `authorization_code` response
+            // containing the JSON. Ok to proceed.
+            break
+        case 400:
+            // This is a `client_credentials` response (`authorization_code` would have communicated the error via a redirect).
+            // Bail out.
+            jsonIsErrorObject = true
+            break
+        default:
+            // Unexpected server response, bail out and supply response to caller for further diagnostics.
+            completion(.Failure(failure: AuthorizationFailure.UnexpectedServerResponse(response: httpResponse)))
             return
         }
         
@@ -157,15 +182,28 @@ public class OAuth2 {
         }
         
         do {
-            guard let jsonObject = try utf8String.jsonObject() else {
-                completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
-                return
-            }
-            do {
-                let authData = try AuthorizationData.decode(jsonObject)
-                completion(.Success(data: authData))
-            } catch let error {
-                completion(.Failure(failure: error))
+            if jsonIsErrorObject {
+                guard let jsonObject = try utf8String.parseIntoJSONObject() else {
+                    completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
+                    return
+                }
+                do {
+                    let errorData = try ErrorData.decode(jsonObject)
+                    completion(.Failure(failure: failureForOAuthError(errorData.error, description: errorData.errorDescription)))
+                } catch let error {
+                    completion(.Failure(failure: error))
+                }
+            } else {
+                guard let jsonObject = try utf8String.parseIntoJSONObject() else {
+                    completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
+                    return
+                }
+                do {
+                    let authData = try AuthorizationData.decode(jsonObject)
+                    completion(.Success(data: authData))
+                } catch let error {
+                    completion(.Failure(failure: error))
+                }
             }
         }
         catch let parseError {
@@ -195,6 +233,8 @@ public class OAuth2 {
     }
     
     private static func logRequest(urlRequest: NSURLRequest) {
+        if !loggingEnabled { return }
+        
         print("\(urlRequest.HTTPMethod!) \(urlRequest.URL!)")
         if let headers = urlRequest.allHTTPHeaderFields {
             for (name, value) in headers {
@@ -211,6 +251,8 @@ public class OAuth2 {
     }
     
     private static func logResponse(urlResponse: NSHTTPURLResponse?, bodyData: NSData?) {
+        if !loggingEnabled { return }
+
         let statusCode = urlResponse?.statusCode ?? 0
         print("HTTP \(statusCode) \(NSHTTPURLResponse.localizedStringForStatusCode(statusCode))")
         if let headers = urlResponse?.allHeaderFields {
@@ -229,36 +271,29 @@ public class OAuth2 {
     
 }
 
-extension AuthorizationData {
-    /// Decodes authorization data JSON into an `AuthorizationData` object.
-    public static func decode(json: AnyObject) throws -> AuthorizationData {
-        guard let dict = json as? NSDictionary else { throw AuthorizationDataInvalid.NotJSONObject }
-        guard let accessToken = dict["access_token"] as? String else { throw AuthorizationDataInvalid.MissingAccessToken }
-        let refreshToken = dict["refresh_token"] as? String
-        let expiresInSeconds = dict["expires_in"] as? Int
-        return AuthorizationData(accessToken: accessToken, refreshToken: refreshToken, expiresInSeconds: expiresInSeconds)
-    }
-}
-
 extension String {
     /// Attempts to parse this string as JSON and returns the parsed object if successful.
-    func jsonObject() throws -> AnyObject? {
+    func parseIntoJSONObject() throws -> AnyObject? {
         if let data = dataUsingEncoding(NSUTF8StringEncoding) {
             return try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
         }
         return nil
     }
     
+    /// Decodes a URL encoded string, as well as replacing any occurrences of `+` with a space. Returns the original string
+    /// if any error occurs while decoding.
     var urlDecodedString: String {
         return NSString(string: self).stringByRemovingPercentEncoding?.stringByReplacingOccurrencesOfString("+", withString: " ") ?? self
     }
     
+    /// Encodes a string into a format suitable for using in URL query parameter values, or form POST parameter values.
     var queryUrlEncodedString: String? {
         return NSString(string: self).stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet())
     }
 }
 
 extension NSURL {
+    /// Returns a dictionary of the query parameters of this URL.
     var queryParameters : [String: String] {
         let components = NSURLComponents(string: absoluteString)
         let parameterDict = components?
@@ -271,6 +306,9 @@ extension NSURL {
 }
 
 extension Array {
+    /// Converts this array to a dictionary of type `[K: V]`.
+    /// - Parameters:
+    ///   - transform: A function to transform an array element of type `Element` into a `(K, V)` tuple.
     func toDictionary<K, V>(transform: Element -> (K, V)) -> [K: V] {
         var dict: [K: V] = [:]
         for item in self {

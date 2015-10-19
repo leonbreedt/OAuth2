@@ -25,14 +25,18 @@ import WebKit
 /// Enumerates the possible responses for a web view based request.
 public enum WebViewResponse {
     /// A general error occurred while attempting to load the request.
-    case Error(error: ErrorType)
+    /// - Parameters:
+    ///   - error: The error that occurred while loading.
+    case LoadError(error: ErrorType)
 
     /// An error occurred while attempting to load the request, and the HTTP response is available for further consultation.
-    case ResponseError(error: ErrorType, response: NSHTTPURLResponse)
+    /// - Parameters:
+    ///   - response: The HTTP response that can be consulted to attempt to determine the root cause.
+    case ResponseError(response: NSHTTPURLResponse)
     
     /// Completed, and a redirect was performed.
     /// - Parameters:
-    ///   - redirectionURL: The full URL (with parameters) that the server redirected to.
+    ///   - redirectionURL: The full URL (with any query parameters) that the server redirected to.
     case Redirection(redirectionURL: NSURL)
 }
 
@@ -40,7 +44,7 @@ public enum WebViewResponse {
 public typealias WebViewCompletionHandler = WebViewResponse -> Void
 
 /// Controller for displaying a web view, performing an `NSURLRequest` inside it, 
-/// and capturing redirects to a well-known URL (typical OAuth use case).
+/// and intercepting redirects to a well-known URL.
 public class WebViewController: UIViewController, WKNavigationDelegate {
     weak var webView: WKWebView!
     
@@ -62,15 +66,10 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
 
     /// Not supported for `WebViewController`.
     public required init?(coder aDecoder: NSCoder) {
-        self.webView = nil
-        self.request = nil
-        self.redirectionURL = nil
-        self.completionHandler = nil
-        super.init(coder: aDecoder)
-        assertionFailure("init(coder:) is not supported")
+        fatalError("init(coder:) is not supported for WebViewController")
     }
     
-    /// Loads the web view's `NSURLRequest`, invoking the handler when a redirection attempt
+    /// Loads the web view's `NSURLRequest`, invoking `completionHandler` when a redirection attempt
     /// to the `redirectionURL` is made.
     public func loadRequest() {
         webView.loadRequest(request)
@@ -108,7 +107,8 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
         if let httpResponse = navigationResponse.response as? NSHTTPURLResponse {
             if httpResponse.statusCode >= 400 || httpResponse.statusCode < 200 {
                 // Probably, something is bad with the request, server did not like it.
-                completionHandler(.ResponseError(error: AuthorizationFailure.InvalidResponseStatusCode, response: httpResponse))
+                // Forward the details on so someone else can do something meaningful with it.
+                completionHandler(.ResponseError(response: httpResponse))
                 decisionHandler(.Cancel)
                 return
             }
@@ -117,6 +117,6 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
     }
     
     public func webView(webView: WKWebView, didFailNavigation navigation: WKNavigation!, withError error: NSError) {
-        completionHandler(.Error(error: error))
+        completionHandler(.LoadError(error: error))
     }
 }

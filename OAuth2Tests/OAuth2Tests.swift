@@ -20,101 +20,97 @@ import XCTest
 
 @testable import OAuth2
 
+let authorizationURL = "http://nonexistent.com/authorization"
+let tokenURL = "http://nonexistent.com/token"
 let clientId = "test-client-id"
 let clientSecret = "test-client-secret"
 let accessToken = "open sesame"
 
 class OAuth2Tests: XCTestCase {
+    override func setUp() {
+        OAuth2.urlRequestHook = testURLRequest
+        OAuth2.webViewRequestHook = testWebViewRequest
+    }
     
     func testClientCredentialsSuccessfulAuth() {
-        let url = "http://nonexistent.com/authorization"
-        let handler = handlerForResponse(200, url: url, body: ["access_token" : accessToken].toJSONString())
+        setUpURLResponse(200, url: authorizationURL, body: ["access_token": accessToken].toJSONString())
         
-        let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
+        let request = ClientCredentialsRequest(authorizationURL: authorizationURL, clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
         performOAuthRequest("Client Credentials request") { finished in
-            OAuth2.authorize(request, authorizationHandler: handler) { response = $0 }
+            OAuth2.authorize(request) { response = $0 }
             finished()
         }
 
-        assertSuccessfulWithToken(response, accessToken: accessToken)
+        switch response! {
+        case .Success(let data):
+            XCTAssertEqual(accessToken, data.accessToken)
+            break
+        default:
+            XCTFail("expected request to succeed, but was \(response) instead")
+        }
     }
+    
+    func testClientCredentialsFailedAuth() {
+        setUpURLResponse(400, url: authorizationURL, body: ["error": "access_denied", "error_description": "internal error"].toJSONString())
         
-    func testServerReturnsUnauthorized() {
-        let url = "http://nonexistent.com/authorization"
-        let handler = handlerForResponse(401, url: url, body: "")
-        
-        let request = ClientCredentialsRequest(url: url , clientId: clientId, clientSecret: clientSecret)!
+        let request = ClientCredentialsRequest(authorizationURL: authorizationURL, clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
         performOAuthRequest("Client Credentials request") { finished in
-            OAuth2.authorize(request, authorizationHandler: handler) { response = $0 }
+            OAuth2.authorize(request) { response = $0 }
             finished()
         }
         
-        assertFailedWithReason(response)
+        switch response! {
+        case .Failure(let error):
+            switch error {
+            case AuthorizationFailure.OAuthAccessDenied(let description):
+                XCTAssertEqual("internal error", description)
+            default:
+                XCTFail("expected request to fail with OAuthAccessDenied, but was \(error) instead")
+            }
+        default:
+            XCTFail("expected request to fail with OAuthAccessDenied, but was \(response) instead")
+        }
     }
-    
+
     // - MARK: test helpers
     
-    private func handlerForResponse(statusCode: Int, url urlString: String, body: String, headers: [String: String] = [:]) -> URLRequestHandler {
-        let url = NSURL(string: urlString)!
-        return { request, responseHandler in
-            responseHandler(
-                NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers),
-                nil,
-                body.dataUsingEncoding(NSUTF8StringEncoding))
-        }
+    private var handleURLRequest: (OAuth2.URLRequestCompletionHandler -> Void)! = nil
+    private var handleWebViewRequest: (OAuth2.WebViewRequestCompletionHandler -> Void)! = nil
+    
+    private func testURLRequest(request: NSURLRequest, completionHandler: (NSData?, NSURLResponse?, ErrorType?) -> Void) {
+        assert(handleURLRequest != nil)
+        handleURLRequest(completionHandler)
     }
     
-    private func assertSuccessfulWithToken(response: Response?, accessToken: String, file: String = __FILE__, line: UInt = __LINE__) {
-        XCTAssertNotNil(response, file: file, line: line)
-        switch (response!) {
-        case .Failure(let reason):
-            switch (reason) {
-            case .WithError(let error):
-                XCTFail("Expected response to be successful, but response failed with NSError: \(error)", file: file, line: line)
-            case .WithReason(let reason):
-                XCTFail("Expected response to be successful, but response failed with reason: \(reason)", file: file, line: line)
-            }
-        case .Success(let data):
-            if data.accessToken != accessToken {
-                recordFailureWithDescription("assertSuccessfulWithToken failed: token \"\(data.accessToken)\" is not equal to \"\(accessToken)\"", inFile: file, atLine: line, expected: false)
-            }
-        }
+    private func testWebViewRequest(request: NSURLRequest, redirectionURL: NSURL, completionHandler: ([String: String]?, ErrorType?) -> Void) {
+        assert(handleWebViewRequest != nil)
+        handleWebViewRequest(completionHandler)
     }
-
-    private func assertFailedWithReason(response: Response?, file: String = __FILE__, line: UInt = __LINE__) {
-        XCTAssertNotNil(response, file: file, line: line)
-        switch (response!) {
-        case .Failure(let reason):
-            switch (reason) {
-            case .WithError(let error):
-                recordFailureWithDescription("assertFailedWithReason expected response to have a reason, but had an error instead: \(error)", inFile: file, atLine: line, expected: false)
-            case .WithReason:
-                return
-            }
-        case .Success:
-            recordFailureWithDescription("assertFailedWithReason expected response to fail, but was successful instead", inFile: file, atLine: line, expected: false)
+    
+    private func setUpURLResponse(statusCode: Int, url urlString: String, body: String, headers: [String: String] = [:]) {
+        let url = NSURL(string: urlString)!
+        handleURLRequest = { completion in
+            completion(
+                body.dataUsingEncoding(NSUTF8StringEncoding),
+                NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers),
+                nil)
         }
     }
 }
 
-protocol NSStringConvertible {
+private protocol NSStringConvertible {
     var nsString : NSString { get }
 }
 
-typealias OAuthRequestCompleted = () -> Void
-typealias OAuthRequestCallback = OAuthRequestCompleted -> Void
-
-extension XCTestCase {
-    func performOAuthRequest(description: String, timeout: NSTimeInterval = 5.0, callback: OAuthRequestCallback) {
+private extension XCTestCase {
+    func performOAuthRequest(description: String, timeout: NSTimeInterval = 5.0, callback: (() -> Void) -> Void) {
         let expectation = expectationWithDescription(description)
         callback(expectation.fulfill)
         waitForExpectationsWithTimeout(timeout, handler: nil)
    }
 }
-
-// What a hack to get toJson() only on Dictionary<String, String> :(
 
 extension String : NSStringConvertible {
     public var nsString: NSString {
@@ -122,7 +118,7 @@ extension String : NSStringConvertible {
     }
 }
 
-extension Dictionary where Key: NSStringConvertible, Value: NSStringConvertible {
+private extension Dictionary where Key: NSStringConvertible, Value: NSStringConvertible {
     func toJSONString() -> String {
         var dict: [NSString : NSString] = [:]
         for (name, value) in self {

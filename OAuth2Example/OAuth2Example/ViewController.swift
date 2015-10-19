@@ -45,13 +45,13 @@ class ViewController: UIViewController {
         let request = AuthorizationCodeRequest(
             authorizationURL: "https://soundcloud.com/connect",
             tokenURL: "https://api.soundcloud.com/oauth2/token",
-            clientId: "PUT-IN-YOUR-ID-HERE",
-            clientSecret: "PUT-IN-YOUR-SECRET-HERE",
-            redirectURL: "PUT-IN-YOUR-URI-HERE")!
+            clientId: "cb4d8af97ae76cb73eb803b1d6982297",
+            clientSecret: "6175009e3a49a6d985c5f32df8ba7365",
+            redirectURL: "https://sector42.com/pocketcloud/oauth")!
         OAuth2.authorize(request) { response in
             switch response {
             case .Success(let data):
-                print("authorization completed, access token is \(data.accessToken), expires in \(data.expiresInSeconds), refresh token is '\(data.refreshToken ?? "N/A")'")
+                print("authorization completed, access token is \(data.accessToken), expires in \(data.expiresInSeconds), refresh token is '\(data.refreshToken)'")
                 break
             default:
                 print("authorization failed with response \(response)")
