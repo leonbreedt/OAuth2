@@ -22,6 +22,7 @@ import XCTest
 
 let authorizationURL = "http://nonexistent.com/authorization"
 let tokenURL = "http://nonexistent.com/token"
+let redirectURL = "http://nonexistent.com/redirection"
 let clientId = "test-client-id"
 let clientSecret = "test-client-secret"
 let accessToken = "open sesame"
@@ -32,12 +33,64 @@ class OAuth2Tests: XCTestCase {
         OAuth2.webViewRequestHook = testWebViewRequest
     }
     
+    func testAuthorizationCodeSuccessfulAuth() {
+        setUpWebViewResponse(["code": "abc123"], error: nil)
+        setUpURLResponse(200, url: tokenURL, body: ["access_token": accessToken].toJSONString())
+        
+        let request = AuthorizationCodeRequest(authorizationURL: authorizationURL,
+                                               tokenURL: tokenURL,
+                                               clientId: clientId,
+                                               clientSecret: clientSecret,
+                                               redirectURL: redirectURL)!
+        var response: Response!
+        performOAuthRequest("authorization-code-request") { finished in
+            OAuth2.authorize(request) { response = $0 }
+            finished()
+        }
+        
+        switch response! {
+        case .Success(let data):
+            XCTAssertEqual(accessToken, data.accessToken)
+            break
+        default:
+            XCTFail("expected request to succeed, but was \(response) instead")
+        }
+    }
+    
+    func testAuthorizationCodeServerRejectedAuth() {
+        setUpWebViewResponse(["error": "invalid_scope", "error_description": "the+scope+was+not+valid"], error: nil)
+        
+        let request = AuthorizationCodeRequest(authorizationURL: authorizationURL,
+            tokenURL: tokenURL,
+            clientId: clientId,
+            clientSecret: clientSecret,
+            redirectURL: redirectURL)!
+        var response: Response!
+        performOAuthRequest("authorization-code-request") { finished in
+            OAuth2.authorize(request) { response = $0 }
+            finished()
+        }
+        
+        switch response! {
+        case .Failure(let error):
+            switch error {
+            case AuthorizationFailure.OAuthInvalidScope(let description):
+                XCTAssertEqual("the scope was not valid", description)
+            default:
+                XCTFail("expected error to be OAuthInvalidScope, but was \(error) instead")
+            }
+            break
+        default:
+            XCTFail("expected request to fail, but was \(response) instead")
+        }
+    }
+    
     func testClientCredentialsSuccessfulAuth() {
         setUpURLResponse(200, url: authorizationURL, body: ["access_token": accessToken].toJSONString())
         
         let request = ClientCredentialsRequest(authorizationURL: authorizationURL, clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
-        performOAuthRequest("Client Credentials request") { finished in
+        performOAuthRequest("client-credentials-request") { finished in
             OAuth2.authorize(request) { response = $0 }
             finished()
         }
@@ -51,12 +104,12 @@ class OAuth2Tests: XCTestCase {
         }
     }
     
-    func testClientCredentialsFailedAuth() {
+    func testClientCredentialsServerRejectedAuth() {
         setUpURLResponse(400, url: authorizationURL, body: ["error": "access_denied", "error_description": "internal error"].toJSONString())
         
         let request = ClientCredentialsRequest(authorizationURL: authorizationURL, clientId: clientId, clientSecret: clientSecret)!
         var response: Response!
-        performOAuthRequest("Client Credentials request") { finished in
+        performOAuthRequest("client-credentials-request") { finished in
             OAuth2.authorize(request) { response = $0 }
             finished()
         }
@@ -73,7 +126,7 @@ class OAuth2Tests: XCTestCase {
             XCTFail("expected request to fail with OAuthAccessDenied, but was \(response) instead")
         }
     }
-
+    
     // - MARK: test helpers
     
     private var handleURLRequest: (OAuth2.URLRequestCompletionHandler -> Void)! = nil
@@ -96,6 +149,12 @@ class OAuth2Tests: XCTestCase {
                 body.dataUsingEncoding(NSUTF8StringEncoding),
                 NSHTTPURLResponse(URL: url, statusCode: statusCode, HTTPVersion: "HTTP/1.1", headerFields: headers),
                 nil)
+        }
+    }
+
+    private func setUpWebViewResponse(redirectionQueryParameters: [String: String]? = nil, error: ErrorType? = nil) {
+        handleWebViewRequest = { completion in
+            completion(redirectionQueryParameters, error)
         }
     }
 }
