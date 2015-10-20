@@ -86,7 +86,7 @@ class OAuth2Tests: XCTestCase {
     }
     
     func testClientCredentialsSuccessfulAuth() {
-        setUpURLResponse(200, url: authorizationURL, body: ["access_token": accessToken].toJSONString(), headers: ["Content-Type": "application/json"])
+        setUpURLResponse(200, url: authorizationURL, body: ["access_token": accessToken].toJSONString(), headers: ["Content-Type": "application/json; encoding=utf-8"])
         
         let request = ClientCredentialsRequest(authorizationURL: authorizationURL, clientId: clientId, clientSecret: clientSecret)!
         var response: Response!

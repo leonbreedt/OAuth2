@@ -172,13 +172,6 @@ public class OAuth2 {
             return
         }
         
-        var contentIsJson = true
-        if let contentType = httpResponse.allHeaderFields["Content-Type"] as? String {
-            if !contentType.hasPrefix("text/json") && !contentType.hasPrefix("application/json") {
-                contentIsJson = false
-            }
-        }
-        
         guard let data = data else {
             completion(.Failure(failure: AuthorizationDataInvalid.Empty))
             return
@@ -188,25 +181,23 @@ public class OAuth2 {
             completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
             return
         }
-        
+
+        let (contentType, _) = parseContentType(httpResponse.allHeaderFields["Content-Type"] as? String)
+
         do {
+            var object: AnyObject?
+            if contentType == "application/json" || contentType == "text/json" || contentType == "text/x-json" {
+                object = try utf8String.parseIntoJSONObject()
+            } else {
+                // Backends like Facebook may give us non-RFC-complaint form data response as plain text. Accomodate this.
+                object = utf8String.parseFormDataIntoDictionary()
+            }
+            
             if responseIsServerRejectionError {
-                var object: AnyObject?
-                if contentIsJson {
-                    object = try utf8String.parseIntoJSONObject()
-                    if object == nil {
-                        completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
-                        return
-                    }
-                } else {
-                    // Backends like Facebook may give us non-RFC-complaint form data response as plain text. Accomodate this.
-                    object = utf8String.parseFormDataIntoDictionary()
-                    if object == nil {
-                        completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
-                        return
-                    }
+                if object == nil {
+                    completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
+                    return
                 }
-                
                 do {
                     let errorData = try ErrorData.decode(object!)
                     completion(.Failure(failure: failureForOAuthError(errorData.error, description: errorData.errorDescription)))
@@ -214,20 +205,9 @@ public class OAuth2 {
                     completion(.Failure(failure: error))
                 }
             } else {
-                var object: AnyObject?
-                if contentIsJson {
-                    object = try utf8String.parseIntoJSONObject()
-                    if object == nil {
-                        completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
-                        return
-                    }
-                } else {
-                    // Backends like Facebook may give us non-RFC-complaint form data response as plain text. Accomodate this.
-                    object = utf8String.parseFormDataIntoDictionary()
-                    if object == nil {
-                        completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
-                        return
-                    }
+                if object == nil {
+                    completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
+                    return
                 }
                 
                 do {
@@ -262,6 +242,22 @@ public class OAuth2 {
         default:
             return AuthorizationFailure.OAuthUnknownError(description: "Unknown error: \(description) (\(error))")
         }
+    }
+    
+    private static func parseContentType(value: String?) -> (contentType: String, parameters: [String: String]) {
+        if let value = value {
+            let headerComponents = value.componentsSeparatedByString(";")
+                                        .map { $0.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceCharacterSet()) }
+            if headerComponents.count > 1 {
+                let parameters = headerComponents[1..<headerComponents.count]
+                                     .map { $0.componentsSeparatedByString("=") }
+                                     .toDictionary { ($0[0], $0[1]) }
+                return (contentType: headerComponents[0], parameters: parameters)
+            } else {
+                return (contentType: headerComponents[0], parameters: [:])
+            }
+        }
+        return (contentType: "application/octet-stream", parameters: [:])
     }
     
     private static func logRequest(urlRequest: NSURLRequest) {
