@@ -22,6 +22,8 @@ import Cocoa
 #endif
 import WebKit
 
+var titleObservation = 1
+
 /// Enumerates the possible responses for a web view based request.
 public enum WebViewResponse {
     /// A general error occurred while attempting to load the request.
@@ -72,6 +74,7 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
     /// Loads the web view's `NSURLRequest`, invoking `completionHandler` when a redirection attempt
     /// to the `redirectionURL` is made.
     public func loadRequest() {
+        loadViewIfNeeded()
         webView.loadRequest(request)
     }
     
@@ -79,15 +82,32 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
     
     public override func loadView() {
         super.loadView()
+
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Cancel, target: self, action: "dismissController")
         
         let webView = WKWebView(frame: CGRectZero, configuration: WKWebViewConfiguration())
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
+        webView.addObserver(self, forKeyPath: "title", options: .New, context: &titleObservation)
         view.addSubview(webView)
         let heightConstraint = NSLayoutConstraint(item: webView, attribute: .Height, relatedBy: .Equal, toItem: view, attribute: .Height, multiplier: 1, constant: 0)
         let widthConstraint = NSLayoutConstraint(item: webView, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 1, constant: 0)
         view.addConstraints([heightConstraint, widthConstraint])
         self.webView = webView
+    }
+    
+    deinit {
+        if let webView = webView {
+            webView.removeObserver(self, forKeyPath: "title")
+        }
+    }
+    
+    public override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+        if context == &titleObservation {
+            if let newTitle = change?[NSKeyValueChangeNewKey] as? String {
+                title = newTitle
+            }
+        }
     }
     
     // MARK: - WKNavigationDelegate
@@ -118,5 +138,12 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
     
     public func webView(webView: WKWebView, didFailNavigation navigation: WKNavigation!, withError error: NSError) {
         completionHandler(.LoadError(error: error))
+    }
+    
+    // MARK: - Actions
+    
+    public func dismissController() {
+        dismissViewControllerAnimated(true, completion: nil)
+        completionHandler(.LoadError(error: AuthorizationFailure.OAuthAccessDenied(description: "User canceled authentication")))
     }
 }

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		2E074A7E1BCA2D9C00D149D9 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E074A7D1BCA2D9C00D149D9 /* WebViewController.swift */; };
+		2E5D1DAE1BD8AFB00068F53A /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E074A7D1BCA2D9C00D149D9 /* WebViewController.swift */; };
 		2EDB76761BCA237C001C016E /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EDB76751BCA237C001C016E /* OAuth2.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2EDB767D1BCA237C001C016E /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EDB76721BCA237C001C016E /* OAuth2.framework */; };
 		2EDB76821BCA237C001C016E /* OAuth2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76811BCA237C001C016E /* OAuth2Tests.swift */; };
@@ -339,6 +340,7 @@
 				2EDB76AB1BCA263C001C016E /* OAuth2.swift in Sources */,
 				2EDB76B21BCA2682001C016E /* Response.swift in Sources */,
 				2EDB76B01BCA2682001C016E /* Request.swift in Sources */,
+				2E5D1DAE1BD8AFB00068F53A /* WebViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

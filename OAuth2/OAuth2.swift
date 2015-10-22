@@ -19,6 +19,8 @@ import Foundation
 
 #if os(iOS)
 import UIKit
+#else
+import Cocoa
 #endif
 
 /// Handler called when an OAuth authorization request has completed.
@@ -136,7 +138,8 @@ public class OAuth2 {
         }
         
 #if os(iOS)
-        UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(controller, animated: true, completion: nil)
+        let navigationController = UINavigationController(rootViewController: controller)
+        UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(navigationController, animated: true, completion: nil)
 #elseif os(OSX)
     
 #endif
