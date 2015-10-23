@@ -45,10 +45,12 @@ public enum WebViewResponse {
 /// A completion handler for web view requests.
 public typealias WebViewCompletionHandler = WebViewResponse -> Void
 
-/// Represents a view controller that can be used to load URL requests.
+/// Represents a view controller that can be used to execute URL requests.
 public protocol WebViewControllerType {
-    /// Triggers the load request.
-    func loadRequest()
+    /// Presents the controller and triggers the URL request.
+    func present()
+    /// Dismisses the controller.
+    func dismiss()
 }
 
 /// Controller for displaying a web view, performing an `NSURLRequest` inside it, 
@@ -80,9 +82,25 @@ public class WebViewController: UIViewController, WKNavigationDelegate, WebViewC
     
     /// Loads the web view's `NSURLRequest`, invoking `completionHandler` when a redirection attempt
     /// to the `redirectionURL` is made.
-    public func loadRequest() {
+    public func present() {
+        #if os(iOS)
+        let navigationController = UINavigationController(rootViewController: self)
+        UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(navigationController, animated: true, completion: nil)
+        #elseif os(OSX)
+        // TODO: Implement
+        #endif
+        
         loadViewIfNeeded()
         webView.loadRequest(request)
+    }
+    
+    /// Dismisses the view controller.
+    public func dismiss() {
+        #if os(iOS)
+        dismissViewControllerAnimated(true, completion: nil)
+        #elseif os(OSX)
+            // TODO: Implement
+        #endif
     }
     
     // MARK: - UIViewController
@@ -90,7 +108,7 @@ public class WebViewController: UIViewController, WKNavigationDelegate, WebViewC
     public override func loadView() {
         super.loadView()
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Cancel, target: self, action: "dismissController")
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Cancel, target: self, action: "dismissAndCancel")
         
         let webView = WKWebView(frame: CGRectZero, configuration: WKWebViewConfiguration())
         webView.navigationDelegate = self
@@ -149,8 +167,8 @@ public class WebViewController: UIViewController, WKNavigationDelegate, WebViewC
     
     // MARK: - Actions
     
-    public func dismissController() {
-        dismissViewControllerAnimated(true, completion: nil)
+    public func dismissAndCancel() {
+        dismiss()
         completionHandler(.LoadError(error: AuthorizationFailure.OAuthAccessDenied(description: "User canceled authentication")))
     }
 }

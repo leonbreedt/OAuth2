@@ -97,14 +97,35 @@ public struct ErrorData {
     /// Decodes a JSON object into an `AuthorizationData` model object
     /// - Parameters:
     ///   - json: An object that was parsed from JSON.
-    public static func decode(json: AnyObject) throws -> ErrorData
-    {
+    public static func decode(json: AnyObject) throws -> ErrorData {
         guard let dict = json as? NSDictionary else { throw ErrorDataInvalid.NotJSONObject }
         guard let error = dict["error"] as? String else { throw ErrorDataInvalid.MissingErrorField }
         let errorDescription = dict["error_description"] as? String
         let errorURIString = dict["error_uri"] as? String
         let errorURI = errorURIString != nil ? NSURL(string: errorURIString!) : nil
         return ErrorData(error: error, errorDescription: errorDescription, errorURI: errorURI)
+    }
+    
+    /// Returns an `AuthorizationFailure` corresponding to the OAuth 2.0 error value in `error`.
+    func asAuthorizationFailure() -> AuthorizationFailure {
+        switch error {
+        case "invalid_request":
+            return AuthorizationFailure.OAuthInvalidRequest(description: errorDescription)
+        case "unauthorized_client":
+            return AuthorizationFailure.OAuthUnauthorizedClient(description: errorDescription)
+        case "access_denied":
+            return AuthorizationFailure.OAuthAccessDenied(description: errorDescription)
+        case "unsupported_response_type":
+            return AuthorizationFailure.OAuthUnsupportedResponseType(description: errorDescription)
+        case "invalid_scope":
+            return AuthorizationFailure.OAuthInvalidScope(description: errorDescription)
+        case "server_error":
+            return AuthorizationFailure.OAuthServerError(description: errorDescription)
+        case "temporarily_unavailable":
+            return AuthorizationFailure.OAuthTemporarilyUnavailable(description: errorDescription)
+        default:
+            return AuthorizationFailure.OAuthUnknownError(description: "Unknown error: \(errorDescription) (\(error))")
+        }
     }
 }
 

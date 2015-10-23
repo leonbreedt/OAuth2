@@ -15,14 +15,6 @@
 // limitations under the License.
 //
 
-import Foundation
-
-#if os(iOS)
-import UIKit
-#else
-import Cocoa
-#endif
-
 /// Handler called when an OAuth authorization request has completed.
 public typealias AuthorizationCompletionHandler = Response -> Void
 
@@ -66,8 +58,8 @@ public class OAuth2 {
                         processAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
                     }
                 } else if let error = queryParameters["error"] {
-                    let failure = failureForOAuthError(error, description: queryParameters["error_description"]?.urlDecodedString)
-                    completion(.Failure(failure: failure))
+                    let failure = ErrorData(error: error, errorDescription: queryParameters["error_description"]?.urlDecodedString, errorURI: nil)
+                    completion(.Failure(failure: failure.asAuthorizationFailure()))
                 } else {
                     completion(.Failure(failure: AuthorizationFailure.MissingParametersInRedirectionURI))
                 }
@@ -131,28 +123,14 @@ public class OAuth2 {
         logRequest(request)
 
         var controller: WebViewControllerType!
+        
         controller = createWebViewController(request, redirectionURL) { response in
-#if os(iOS)
-            // TODO: Find some way to do this more type-safely
-            guard let viewController = controller as? UIViewController else { fatalError("webViewController must be a UIViewController on iOS") }
-            viewController.dismissViewControllerAnimated(true, completion: nil)
-#elseif os(OSX)
-            // TODO: Implement
-#endif
+            controller.dismiss()
             completionHandler(response)
             controller = nil
         }
         
-#if os(iOS)
-        // TODO: Find some way to do this more type-safely
-        guard let viewController = controller as? UIViewController else { fatalError("webViewController must be a UIViewController on iOS") }
-        let navigationController = UINavigationController(rootViewController: viewController)
-        UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(navigationController, animated: true, completion: nil)
-#elseif os(OSX)
-        // TODO: Implement
-#endif
-        
-        controller.loadRequest()
+        controller.present()
     }
 
     private static func createDefaultWebViewController(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) -> WebViewControllerType {
@@ -196,15 +174,19 @@ public class OAuth2 {
             return
         }
 
-        let (contentType, _) = parseContentType(httpResponse.allHeaderFields["Content-Type"] as? String)
+        var contentType: String = "application/octet-stream"
+        if let contentTypeHeader = httpResponse.allHeaderFields["Content-Type"] as? String {
+            let (type, _) = contentTypeHeader.parseAsHTTPContentTypeHeader()
+            contentType = type
+        }
 
         do {
             var object: AnyObject?
             if contentType == "application/json" || contentType == "text/json" || contentType == "text/x-json" {
-                object = try utf8String.parseIntoJSONObject()
+                object = try utf8String.parseAsJSONObject()
             } else {
                 // Backends like Facebook may give us non-RFC-complaint form data response as plain text. Accomodate this.
-                object = utf8String.parseFormDataIntoDictionary()
+                object = utf8String.parseAsURLEncodedFormData()
             }
             
             if responseIsServerRejectionError {
@@ -214,7 +196,7 @@ public class OAuth2 {
                 }
                 do {
                     let errorData = try ErrorData.decode(object!)
-                    completion(.Failure(failure: failureForOAuthError(errorData.error, description: errorData.errorDescription)))
+                    completion(.Failure(failure: errorData.asAuthorizationFailure()))
                 } catch let error {
                     completion(.Failure(failure: error))
                 }
@@ -237,137 +219,13 @@ public class OAuth2 {
         }
     }
     
-    private static func failureForOAuthError(error: String, description: String?) -> AuthorizationFailure {
-        switch error {
-        case "invalid_request":
-            return AuthorizationFailure.OAuthInvalidRequest(description: description)
-        case "unauthorized_client":
-            return AuthorizationFailure.OAuthUnauthorizedClient(description: description)
-        case "access_denied":
-            return AuthorizationFailure.OAuthAccessDenied(description: description)
-        case "unsupported_response_type":
-            return AuthorizationFailure.OAuthUnsupportedResponseType(description: description)
-        case "invalid_scope":
-            return AuthorizationFailure.OAuthInvalidScope(description: description)
-        case "server_error":
-            return AuthorizationFailure.OAuthServerError(description: description)
-        case "temporarily_unavailable":
-            return AuthorizationFailure.OAuthTemporarilyUnavailable(description: description)
-        default:
-            return AuthorizationFailure.OAuthUnknownError(description: "Unknown error: \(description) (\(error))")
-        }
-    }
-    
-    private static func parseContentType(value: String?) -> (contentType: String, parameters: [String: String]) {
-        if let value = value {
-            let headerComponents = value.componentsSeparatedByString(";")
-                                        .map { $0.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceCharacterSet()) }
-            if headerComponents.count > 1 {
-                let parameters = headerComponents[1..<headerComponents.count]
-                                     .map { $0.componentsSeparatedByString("=") }
-                                     .toDictionary { ($0[0], $0[1]) }
-                return (contentType: headerComponents[0], parameters: parameters)
-            } else {
-                return (contentType: headerComponents[0], parameters: [:])
-            }
-        }
-        return (contentType: "application/octet-stream", parameters: [:])
-    }
-    
     private static func logRequest(urlRequest: NSURLRequest) {
         if !loggingEnabled { return }
-        
-        print("\(urlRequest.HTTPMethod!) \(urlRequest.URL!)")
-        if let headers = urlRequest.allHTTPHeaderFields {
-            for (name, value) in headers {
-                print("\(name): \(value)")
-            }
-        }
-        if let bodyData = urlRequest.HTTPBody {
-            if let bodyString = NSString(data: bodyData, encoding: NSUTF8StringEncoding) {
-                print("\n\(bodyString)")
-            } else {
-                print("\n<\(bodyData.length) byte(s)>")
-            }
-        }
+        print(urlRequest.dumpHeadersAndBody())
     }
     
     private static func logResponse(urlResponse: NSHTTPURLResponse?, bodyData: NSData?) {
         if !loggingEnabled { return }
-
-        let statusCode = urlResponse?.statusCode ?? 0
-        print("HTTP \(statusCode) \(NSHTTPURLResponse.localizedStringForStatusCode(statusCode))")
-        if let headers = urlResponse?.allHeaderFields {
-            for (name, value) in headers {
-                print("\(name): \(value)")
-            }
-        }
-        if let data = bodyData {
-            if let bodyString = NSString(data: data, encoding: NSUTF8StringEncoding) {
-                print("\n\(bodyString)")
-            } else {
-                print("\n<\(data.length) byte(s)>")
-            }
-        }
-    }
-    
-}
-
-extension String {
-    /// Attempts to parse this string as JSON and returns the parsed object if successful.
-    func parseIntoJSONObject() throws -> AnyObject? {
-        if let data = dataUsingEncoding(NSUTF8StringEncoding) {
-            return try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
-        }
-        return nil
-    }
-    
-    /// Parses form data into a dictionary.
-    func parseFormDataIntoDictionary() -> AnyObject {
-        var dict: [String: String] = [:]
-        for field in componentsSeparatedByString("&") {
-            let kvp = field.componentsSeparatedByString("=")
-            if kvp.count != 2 { continue }
-            dict[kvp[0]] = kvp[1].urlDecodedString
-        }
-        return dict
-    }
-    
-    /// Decodes a URL encoded string, as well as replacing any occurrences of `+` with a space. Returns the original string
-    /// if any error occurs while decoding.
-    var urlDecodedString: String {
-        return NSString(string: self).stringByRemovingPercentEncoding?.stringByReplacingOccurrencesOfString("+", withString: " ") ?? self
-    }
-    
-    /// Encodes a string into a format suitable for using in URL query parameter values, or form POST parameter values.
-    var queryUrlEncodedString: String? {
-        return NSString(string: self).stringByAddingPercentEncodingWithAllowedCharacters(NSCharacterSet.URLQueryAllowedCharacterSet())
-    }
-}
-
-extension NSURL {
-    /// Returns a dictionary of the query parameters of this URL.
-    var queryParameters : [String: String] {
-        let components = NSURLComponents(string: absoluteString)
-        let parameterDict = components?
-            .queryItems?
-            .filter {$0.value != nil}
-            .map { ($0.name, $0.value!) }
-            .toDictionary { ($0.0, $0.1) } ?? Dictionary<String, String>()
-        return parameterDict
-    }
-}
-
-extension Array {
-    /// Converts this array to a dictionary of type `[K: V]`.
-    /// - Parameters:
-    ///   - transform: A function to transform an array element of type `Element` into a `(K, V)` tuple.
-    func toDictionary<K, V>(transform: Element -> (K, V)) -> [K: V] {
-        var dict: [K: V] = [:]
-        for item in self {
-            let (key, value) = transform(item)
-            dict[key] = value
-        }
-        return dict
+        print(urlResponse?.dumpHeadersAndBody(bodyData))
     }
 }
