@@ -26,6 +26,9 @@ import Cocoa
 /// Handler called when an OAuth authorization request has completed.
 public typealias AuthorizationCompletionHandler = Response -> Void
 
+/// Responsible for creating a web view controller.
+public typealias CreateWebViewController = (NSURLRequest, NSURL, WebViewCompletionHandler) -> WebViewControllerType
+
 /// The entry point into performing OAuth requests in this framework.
 public class OAuth2 {
     /// Performs an OAuth `authorization_code` flow, calling the completion handler when the request is finished.
@@ -36,32 +39,43 @@ public class OAuth2 {
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). The caller must not make any assumptions about
     ///                 which dispatch queue the completion will be called on.
+    ///   - createWebViewController: If not `nil`, a function to call to create a `WebViewControllerType` to perform
+    ///                              the user interaction. The default implementation uses `WKWebView` to perform the user
+    ///                              interaction. The object returned must be either a `UIViewController` (iOS) or 
+    ///                              `NSViewController` (OS X). This can also be supplied if the caller wants to customize
+    ///                              the presentation of this view controller, via _transitioning delegates_, for example.
     public static func authorize(
         request: AuthorizationCodeRequest,
+        createWebViewController: CreateWebViewController? = nil,
         completion: AuthorizationCompletionHandler)
     {
-        // 1. Obtain an authorization code. This requires firing up a web browser, and having the user log in to it.
-        webViewRequestHook(request.authorizationRequest(), redirectionURL: request.redirectURL) { queryParameters, error in
-            if error != nil {
-                completion(.Failure(failure: error!))
-                return
-            }
-            
-            guard let queryParameters = queryParameters else {
-                completion(.Failure(failure: AuthorizationFailure.MissingParametersInRedirectionURI))
-                return
-            }
-            
-            if let code = queryParameters["code"] {
-                // 2. Issue a token by requesting one from token URL, passing in the received code.
-                urlRequestHook(request.tokenRequest(code)) { data, urlResponse, error in
-                    handleAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
+        var createController: CreateWebViewController = createDefaultWebViewController
+        if createWebViewController != nil {
+            createController = createWebViewController!
+        }
+        
+        webViewRequestHook(request.authorizationRequest(), redirectionURL: request.redirectURL, createWebViewController: createController) { response in
+            switch response {
+            case .LoadError(let error):
+                completion(.Failure(failure: error))
+                break
+            case .Redirection(let redirectionURL):
+                let queryParameters = redirectionURL.queryParameters
+                if let code = queryParameters["code"] {
+                    urlRequestHook(request.tokenRequest(code)) { data, urlResponse, error in
+                        processAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
+                    }
+                } else if let error = queryParameters["error"] {
+                    let failure = failureForOAuthError(error, description: queryParameters["error_description"]?.urlDecodedString)
+                    completion(.Failure(failure: failure))
+                } else {
+                    completion(.Failure(failure: AuthorizationFailure.MissingParametersInRedirectionURI))
                 }
-            } else if let error = queryParameters["error"] {
-                let failure = failureForOAuthError(error, description: queryParameters["error_description"]?.urlDecodedString)
-                completion(.Failure(failure: failure))
-            } else {
-                completion(.Failure(failure: AuthorizationFailure.MissingParametersInRedirectionURI))
+                break
+            case .ResponseError(let httpResponse):
+                logResponse(httpResponse, bodyData: nil)
+                completion(.Failure(failure: AuthorizationFailure.UnexpectedServerResponse(response: httpResponse)))
+                break
             }
         }
     }
@@ -78,19 +92,18 @@ public class OAuth2 {
         completion: AuthorizationCompletionHandler)
     {
         urlRequestHook(request.authorizationRequest()) { data, urlResponse, error in
-            handleAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
+            processAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
         }
     }
     
     /// Whether or not HTTP requests and responses will be logged.
     public static var loggingEnabled: Bool = false
     
-    // MARK: - Test hooks
+    // MARK: - Internal test hooks
     
     typealias URLRequestCompletionHandler = (NSData?, NSURLResponse?, ErrorType?) -> Void
     typealias URLRequestHookType = (NSURLRequest, completionHandler: URLRequestCompletionHandler) -> Void
-    typealias WebViewRequestCompletionHandler = ([String: String]?, ErrorType?) -> Void
-    typealias WebViewRequestHookType = (NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewRequestCompletionHandler) -> Void
+    typealias WebViewRequestHookType = (NSURLRequest, redirectionURL: NSURL, createWebViewController: CreateWebViewController, completionHandler: WebViewCompletionHandler) -> Void
     
     static var urlRequestHook: URLRequestHookType = OAuth2.executeURLRequest
     static var webViewRequestHook: WebViewRequestHookType = OAuth2.executeWebViewRequest
@@ -100,7 +113,7 @@ public class OAuth2 {
     private init() {
     }
     
-    private static func executeURLRequest(request: NSURLRequest, completionHandler: (NSData?, NSURLResponse?, ErrorType?) -> Void) {
+    private static func executeURLRequest(request: NSURLRequest, completionHandler: URLRequestCompletionHandler) {
         logRequest(request)
         
         let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
@@ -114,47 +127,45 @@ public class OAuth2 {
         task.resume()
     }
     
-    private static func executeWebViewRequest(request: NSURLRequest, redirectionURL: NSURL, completionHandler: ([String: String]?, ErrorType?) -> Void) {
+    private static func executeWebViewRequest(request: NSURLRequest, redirectionURL: NSURL, createWebViewController: CreateWebViewController, completionHandler: WebViewCompletionHandler) {
         logRequest(request)
 
-        var controller: WebViewController! = nil
-        
-        controller = WebViewController(request: request, redirectionURL: redirectionURL) { response in
-            controller.dismissViewControllerAnimated(true, completion: nil)
+        var controller: WebViewControllerType!
+        controller = createWebViewController(request, redirectionURL) { response in
+#if os(iOS)
+            // TODO: Find some way to do this more type-safely
+            guard let viewController = controller as? UIViewController else { fatalError("webViewController must be a UIViewController on iOS") }
+            viewController.dismissViewControllerAnimated(true, completion: nil)
+#elseif os(OSX)
+            // TODO: Implement
+#endif
+            completionHandler(response)
             controller = nil
-            
-            switch response {
-            case .LoadError(let error):
-                completionHandler(nil, error)
-                break
-            case .Redirection(let redirectionURL):
-                completionHandler(redirectionURL.queryParameters, nil)
-                break
-            case .ResponseError(let httpResponse):
-                logResponse(httpResponse, bodyData: nil)
-                completionHandler(nil, AuthorizationFailure.UnexpectedServerResponse(response: httpResponse))
-                break
-            }
         }
         
 #if os(iOS)
-        let navigationController = UINavigationController(rootViewController: controller)
+        // TODO: Find some way to do this more type-safely
+        guard let viewController = controller as? UIViewController else { fatalError("webViewController must be a UIViewController on iOS") }
+        let navigationController = UINavigationController(rootViewController: viewController)
         UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(navigationController, animated: true, completion: nil)
 #elseif os(OSX)
-    
+        // TODO: Implement
 #endif
         
         controller.loadRequest()
     }
+
+    private static func createDefaultWebViewController(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) -> WebViewControllerType {
+        return WebViewController(request: request, redirectionURL: redirectionURL, completionHandler: completionHandler)
+    }
     
-    private static func handleAuthorizationDataResponse(data: NSData?, urlResponse: NSURLResponse?, error: ErrorType?, completion: AuthorizationCompletionHandler) {
+    private static func processAuthorizationDataResponse(data: NSData?, urlResponse: NSURLResponse?, error: ErrorType?, completion: AuthorizationCompletionHandler) {
         if error != nil {
             completion(.Failure(failure: error!))
             return
         }
 
         assert(urlResponse is NSHTTPURLResponse)
-        
         
         var responseIsServerRejectionError = false
         

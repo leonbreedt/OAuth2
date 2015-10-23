@@ -45,9 +45,16 @@ public enum WebViewResponse {
 /// A completion handler for web view requests.
 public typealias WebViewCompletionHandler = WebViewResponse -> Void
 
+/// Represents a view controller that can be used to load URL requests.
+public protocol WebViewControllerType {
+    /// Triggers the load request.
+    func loadRequest()
+}
+
 /// Controller for displaying a web view, performing an `NSURLRequest` inside it, 
 /// and intercepting redirects to a well-known URL.
-public class WebViewController: UIViewController, WKNavigationDelegate {
+public class WebViewController: UIViewController, WKNavigationDelegate, WebViewControllerType {
+    public typealias Element = WebViewController
     weak var webView: WKWebView!
     
     let request: NSURLRequest!
@@ -59,7 +66,7 @@ public class WebViewController: UIViewController, WKNavigationDelegate {
     ///   - request: The URL request that will be loaded when `loadRequest` is called.
     ///   - redirectionURL: The redirection URL which will trigger a completion if the server attempts to redirect to it.
     ///   - completionHandler: The handler to call when the request completes (successfully or otherwise).
-    public init(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) {
+    public required init(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) {
         self.request = request
         self.redirectionURL = redirectionURL
         self.completionHandler = completionHandler

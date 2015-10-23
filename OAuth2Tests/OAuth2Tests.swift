@@ -130,14 +130,14 @@ class OAuth2Tests: XCTestCase {
     // - MARK: test helpers
     
     private var handleURLRequest: (OAuth2.URLRequestCompletionHandler -> Void)! = nil
-    private var handleWebViewRequest: (OAuth2.WebViewRequestCompletionHandler -> Void)! = nil
+    private var handleWebViewRequest: (WebViewCompletionHandler -> Void)! = nil
     
     private func testURLRequest(request: NSURLRequest, completionHandler: (NSData?, NSURLResponse?, ErrorType?) -> Void) {
         assert(handleURLRequest != nil)
         handleURLRequest(completionHandler)
     }
     
-    private func testWebViewRequest(request: NSURLRequest, redirectionURL: NSURL, completionHandler: ([String: String]?, ErrorType?) -> Void) {
+    private func testWebViewRequest(request: NSURLRequest, redirectionURL: NSURL, createWebViewController: CreateWebViewController, completionHandler: WebViewCompletionHandler) {
         assert(handleWebViewRequest != nil)
         handleWebViewRequest(completionHandler)
     }
@@ -154,8 +154,20 @@ class OAuth2Tests: XCTestCase {
 
     private func setUpWebViewResponse(redirectionQueryParameters: [String: String]? = nil, error: ErrorType? = nil) {
         handleWebViewRequest = { completion in
-            completion(redirectionQueryParameters, error)
+            if redirectionQueryParameters != nil {
+                completion(WebViewResponse.Redirection(redirectionURL: self.redirectionURLWithParameters(redirectionQueryParameters!)))
+            } else if error != nil {
+                completion(WebViewResponse.LoadError(error: error!))
+            } else {
+                fatalError("either redirectionQueryParameters: or error: must be provided")
+            }
         }
+    }
+    
+    private func redirectionURLWithParameters(parameters: [String: String]) -> NSURL {
+        let components = NSURLComponents(string: redirectURL)!
+        components.queryItems = parameters.map { entry in NSURLQueryItem(name: entry.0, value: entry.1) }
+        return components.URL!
     }
 }
 
