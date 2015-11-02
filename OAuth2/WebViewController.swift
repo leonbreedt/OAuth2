@@ -17,8 +17,12 @@
 
 #if os(iOS)
 import UIKit
+/// Type of view controllers for the OS. (`UIViewController` on iOS).
+public typealias ControllerType = UIViewController
 #elseif os(OSX)
 import Cocoa
+/// Type of view controllers for the OS. (`NSViewController` on OSX).
+public typealias ControllerType = NSViewController
 #endif
 import WebKit
 
@@ -55,7 +59,7 @@ public protocol WebViewControllerType {
 
 /// Controller for displaying a web view, performing an `NSURLRequest` inside it, 
 /// and intercepting redirects to a well-known URL.
-public class WebViewController: UIViewController, WKNavigationDelegate, WebViewControllerType {
+public class WebViewController: ControllerType, WKNavigationDelegate, WebViewControllerType {
     public typealias Element = WebViewController
     weak var webView: WKWebView!
     
@@ -63,6 +67,7 @@ public class WebViewController: UIViewController, WKNavigationDelegate, WebViewC
     let redirectionURL: NSURL!
     let completionHandler: WebViewCompletionHandler!
 
+#if os(iOS)
     /// Creates a new `WebViewController` for an `NSURLRequest` and a given redirection URL.
     /// - Parameters:
     ///   - request: The URL request that will be loaded when `loadRequest` is called.
@@ -74,6 +79,19 @@ public class WebViewController: UIViewController, WKNavigationDelegate, WebViewC
         self.completionHandler = completionHandler
         super.init(nibName: nil, bundle: nil)
     }
+#elseif os(OSX)
+    /// Creates a new `WebViewController` for an `NSURLRequest` and a given redirection URL.
+    /// - Parameters:
+    ///   - request: The URL request that will be loaded when `loadRequest` is called.
+    ///   - redirectionURL: The redirection URL which will trigger a completion if the server attempts to redirect to it.
+    ///   - completionHandler: The handler to call when the request completes (successfully or otherwise).
+    public init?(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) {
+        self.request = request
+        self.redirectionURL = redirectionURL
+        self.completionHandler = completionHandler
+        super.init(nibName: nil, bundle: nil)
+    }
+#endif
 
     /// Not supported for `WebViewController`.
     public required init?(coder aDecoder: NSCoder) {
@@ -85,12 +103,19 @@ public class WebViewController: UIViewController, WKNavigationDelegate, WebViewC
     public func present() {
         #if os(iOS)
         let navigationController = UINavigationController(rootViewController: self)
-        UIApplication.sharedApplication().keyWindow!.rootViewController!.presentViewController(navigationController, animated: true, completion: nil)
+        if let delegate = UIApplication.sharedApplication().delegate,
+           let window = delegate.window,
+           let rootViewController = window?.rootViewController
+        {
+            rootViewController.presentViewController(navigationController, animated: true, completion: nil)
+        } else {
+            fatalError("unable to find root view controller")
+        }
+        loadViewIfNeeded()
         #elseif os(OSX)
         // TODO: Implement
         #endif
         
-        loadViewIfNeeded()
         webView.loadRequest(request)
     }
     
@@ -108,7 +133,9 @@ public class WebViewController: UIViewController, WKNavigationDelegate, WebViewC
     public override func loadView() {
         super.loadView()
 
+#if os(iOS)
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Cancel, target: self, action: "dismissAndCancel")
+#endif
         
         let webView = WKWebView(frame: CGRectZero, configuration: WKWebViewConfiguration())
         webView.navigationDelegate = self

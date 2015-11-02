@@ -12,7 +12,7 @@
 		2E18525C1BDAE7CC0065F877 /* NSURLRequest+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DAF1BD9D5BE0068F53A /* NSURLRequest+Extensions.swift */; };
 		2E18525D1BDAE7CC0065F877 /* NSURLResponse+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DB11BD9D6D00068F53A /* NSURLResponse+Extensions.swift */; };
 		2E18525E1BDAE7CC0065F877 /* NSURL+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DB51BD9DABF0068F53A /* NSURL+Extensions.swift */; };
-		2E18525F1BDAE7CC0065F877 /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EDB76751BCA237C001C016E /* OAuth2.h */; };
+		2E18525F1BDAE7CC0065F877 /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EDB76751BCA237C001C016E /* OAuth2.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2E1852601BDAE7CC0065F877 /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76A91BCA263C001C016E /* OAuth2.swift */; };
 		2E1852611BDAE7CC0065F877 /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AD1BCA2682001C016E /* Request.swift */; };
 		2E1852621BDAE7CC0065F877 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AE1BCA2682001C016E /* Response.swift */; };

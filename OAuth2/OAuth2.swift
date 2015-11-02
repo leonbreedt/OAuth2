@@ -134,7 +134,11 @@ public class OAuth2 {
     }
 
     private static func createDefaultWebViewController(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) -> WebViewControllerType {
+#if os(iOS)
         return WebViewController(request: request, redirectionURL: redirectionURL, completionHandler: completionHandler)
+#elseif os(OSX)
+        return WebViewController(request: request, redirectionURL: redirectionURL, completionHandler: completionHandler)!
+#endif
     }
     
     private static func processAuthorizationDataResponse(data: NSData?, urlResponse: NSURLResponse?, error: ErrorType?, completion: AuthorizationCompletionHandler) {
