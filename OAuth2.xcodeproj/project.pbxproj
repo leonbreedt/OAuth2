@@ -8,7 +8,16 @@
 
 /* Begin PBXBuildFile section */
 		2E074A7E1BCA2D9C00D149D9 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E074A7D1BCA2D9C00D149D9 /* WebViewController.swift */; };
-		2E5D1DAE1BD8AFB00068F53A /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E074A7D1BCA2D9C00D149D9 /* WebViewController.swift */; };
+		2E18525B1BDAE7CC0065F877 /* Array+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DB71BD9DB1D0068F53A /* Array+Extensions.swift */; };
+		2E18525C1BDAE7CC0065F877 /* NSURLRequest+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DAF1BD9D5BE0068F53A /* NSURLRequest+Extensions.swift */; };
+		2E18525D1BDAE7CC0065F877 /* NSURLResponse+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DB11BD9D6D00068F53A /* NSURLResponse+Extensions.swift */; };
+		2E18525E1BDAE7CC0065F877 /* NSURL+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DB51BD9DABF0068F53A /* NSURL+Extensions.swift */; };
+		2E18525F1BDAE7CC0065F877 /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EDB76751BCA237C001C016E /* OAuth2.h */; };
+		2E1852601BDAE7CC0065F877 /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76A91BCA263C001C016E /* OAuth2.swift */; };
+		2E1852611BDAE7CC0065F877 /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AD1BCA2682001C016E /* Request.swift */; };
+		2E1852621BDAE7CC0065F877 /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AE1BCA2682001C016E /* Response.swift */; };
+		2E1852631BDAE7CC0065F877 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DB31BD9D8520068F53A /* String+Extensions.swift */; };
+		2E1852641BDAE7CC0065F877 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E074A7D1BCA2D9C00D149D9 /* WebViewController.swift */; };
 		2E5D1DB01BD9D5BE0068F53A /* NSURLRequest+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DAF1BD9D5BE0068F53A /* NSURLRequest+Extensions.swift */; };
 		2E5D1DB21BD9D6D00068F53A /* NSURLResponse+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DB11BD9D6D00068F53A /* NSURLResponse+Extensions.swift */; };
 		2E5D1DB41BD9D8520068F53A /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5D1DB31BD9D8520068F53A /* String+Extensions.swift */; };
@@ -18,13 +27,9 @@
 		2EDB767D1BCA237C001C016E /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EDB76721BCA237C001C016E /* OAuth2.framework */; };
 		2EDB76821BCA237C001C016E /* OAuth2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76811BCA237C001C016E /* OAuth2Tests.swift */; };
 		2EDB769B1BCA23E8001C016E /* OAuth2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EDB76911BCA23E8001C016E /* OAuth2.framework */; };
-		2EDB76A81BCA24E1001C016E /* OAuth2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2EDB76751BCA237C001C016E /* OAuth2.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		2EDB76AA1BCA263C001C016E /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76A91BCA263C001C016E /* OAuth2.swift */; };
-		2EDB76AB1BCA263C001C016E /* OAuth2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76A91BCA263C001C016E /* OAuth2.swift */; };
 		2EDB76AF1BCA2682001C016E /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AD1BCA2682001C016E /* Request.swift */; };
-		2EDB76B01BCA2682001C016E /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AD1BCA2682001C016E /* Request.swift */; };
 		2EDB76B11BCA2682001C016E /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AE1BCA2682001C016E /* Response.swift */; };
-		2EDB76B21BCA2682001C016E /* Response.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDB76AE1BCA2682001C016E /* Response.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -173,7 +178,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2EDB76A81BCA24E1001C016E /* OAuth2.h in Headers */,
+				2E18525F1BDAE7CC0065F877 /* OAuth2.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -357,10 +362,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				2EDB76AB1BCA263C001C016E /* OAuth2.swift in Sources */,
-				2EDB76B21BCA2682001C016E /* Response.swift in Sources */,
-				2EDB76B01BCA2682001C016E /* Request.swift in Sources */,
-				2E5D1DAE1BD8AFB00068F53A /* WebViewController.swift in Sources */,
+				2E18525E1BDAE7CC0065F877 /* NSURL+Extensions.swift in Sources */,
+				2E1852641BDAE7CC0065F877 /* WebViewController.swift in Sources */,
+				2E1852611BDAE7CC0065F877 /* Request.swift in Sources */,
+				2E18525C1BDAE7CC0065F877 /* NSURLRequest+Extensions.swift in Sources */,
+				2E1852601BDAE7CC0065F877 /* OAuth2.swift in Sources */,
+				2E1852631BDAE7CC0065F877 /* String+Extensions.swift in Sources */,
+				2E18525D1BDAE7CC0065F877 /* NSURLResponse+Extensions.swift in Sources */,
+				2E18525B1BDAE7CC0065F877 /* Array+Extensions.swift in Sources */,
+				2E1852621BDAE7CC0065F877 /* Response.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
