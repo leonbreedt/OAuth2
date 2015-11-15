@@ -101,31 +101,34 @@ public class WebViewController: ControllerType, WKNavigationDelegate, WebViewCon
     /// Loads the web view's `NSURLRequest`, invoking `completionHandler` when a redirection attempt
     /// to the `redirectionURL` is made.
     public func present() {
-        #if os(iOS)
-        let navigationController = UINavigationController(rootViewController: self)
-        if let delegate = UIApplication.sharedApplication().delegate,
-           let window = delegate.window,
-           let rootViewController = window?.rootViewController
-        {
-            rootViewController.presentViewController(navigationController, animated: true, completion: nil)
-        } else {
-            fatalError("unable to find root view controller")
+        dispatch_async(dispatch_get_main_queue()) {
+            #if os(iOS)
+            let navigationController = UINavigationController(rootViewController: self)
+            if let delegate = UIApplication.sharedApplication().delegate,
+               let window = delegate.window,
+               let rootViewController = window?.rootViewController
+            {
+                rootViewController.presentViewController(navigationController, animated: true, completion: nil)
+            } else {
+                fatalError("unable to find root view controller")
+            }
+            self.loadViewIfNeeded()
+            #elseif os(OSX)
+            // TODO: Implement
+            #endif
+            self.webView.loadRequest(self.request)
         }
-        loadViewIfNeeded()
-        #elseif os(OSX)
-        // TODO: Implement
-        #endif
-        
-        webView.loadRequest(request)
     }
     
     /// Dismisses the view controller.
     public func dismiss() {
-        #if os(iOS)
-        dismissViewControllerAnimated(true, completion: nil)
-        #elseif os(OSX)
-            // TODO: Implement
-        #endif
+        dispatch_async(dispatch_get_main_queue()) {
+            #if os(iOS)
+            self.dismissViewControllerAnimated(true, completion: nil)
+            #elseif os(OSX)
+                // TODO: Implement
+            #endif
+        }
     }
     
     // MARK: - UIViewController

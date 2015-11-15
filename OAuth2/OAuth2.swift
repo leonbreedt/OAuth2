@@ -120,17 +120,19 @@ public class OAuth2 {
     }
     
     private static func executeWebViewRequest(request: NSURLRequest, redirectionURL: NSURL, createWebViewController: CreateWebViewController, completionHandler: WebViewCompletionHandler) {
-        logRequest(request)
-
-        var controller: WebViewControllerType!
-        
-        controller = createWebViewController(request, redirectionURL) { response in
-            controller.dismiss()
-            completionHandler(response)
-            controller = nil
+        dispatch_async(dispatch_get_main_queue()) {
+            logRequest(request)
+            
+            var controller: WebViewControllerType!
+            
+            controller = createWebViewController(request, redirectionURL) { response in
+                controller.dismiss()
+                completionHandler(response)
+                controller = nil
+            }
+            
+            controller.present()
         }
-        
-        controller.present()
     }
 
     private static func createDefaultWebViewController(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) -> WebViewControllerType {
