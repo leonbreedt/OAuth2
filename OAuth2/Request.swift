@@ -318,7 +318,11 @@ private func buildURLRequest(url: NSURL,
             let component = NSURLQueryItem(name: name, value: encodedValue)
             queryItems.append(component)
         }
-        urlComponents.queryItems = queryItems
+        if queryItems.count > 0 {
+            urlComponents.queryItems = queryItems
+        } else {
+            urlComponents.queryItems = nil
+        }
         if let url = urlComponents.URL {
             let request = NSMutableURLRequest(URL: url)
             for (name, value) in headers {
