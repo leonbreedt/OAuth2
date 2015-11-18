@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>OAuth2 by bitserf</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">OAuth2</h1>
+      <h2 class="project-tagline">Simple OAuth 2.0 framework in Swift</h2>
+      <a href="https://github.com/bitserf/OAuth2" class="btn">View on GitHub</a>
+      <a href="https://github.com/bitserf/OAuth2/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/bitserf/OAuth2/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <p>Tiny little library to perform OAuth 2.0 flows from Swift.</p>
+
+<h2>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h2>
+
+<ul>
+<li>
+<p>Support for <code>authorization_code</code> three-legged OAuth 2.0 flows</p>
+
+<ul>
+<li><p>Uses <code>WKWebView</code> when displaying a web-browser for the user to log in with</p></li>
+<li><p>Does not require registering custom URL schemes to handle the redirection by
+the server, instead intercepts it directly on the <code>WKWebView</code>.</p></li>
+<li><p>If the default <code>WKWebView</code> implementation is not satisfactory, allows complete
+customization of how the user is logged in to the authorization service:
+Just pass through the <code>createWebViewController:</code> parameter to
+<code>OAuth2.authorize()</code>, and have it return an adopter of the
+<code>WebViewControllerType</code> protocol.</p></li>
+</ul>
+</li>
+<li><p>Support for <code>client_credential</code> two-legged OAuth 2.0 flows</p></li>
+<li><p>Support for <code>refresh_token</code> two-legged OAuth 2.0 flows</p></li>
+</ul>
+
+<p>I have tested the library with Google, Facebook and SoundCloud logins. </p>
+
+<p><em>NOTE:</em> Since Twitter uses the more complex OAuth 1.0, you will need a different
+library if you want to support Twitter's flavour of OAuth.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>You will need the OAuth authorization URL and token URL for the service you are
+trying to connect to. </p>
+
+<p>You will also need the client ID and client secret for your application,
+usually found in the developer portal of the service.  Google and Facebook call
+them <em>app ID</em> and <em>app secret</em>, other providers may use different terminology.</p>
+
+<p>Lastly, if you use the <code>authorization_code</code> OAuth 2.0 flow (the one that
+requires a user to log in to the service with a web browser, and grant your
+application permission), you will need a redirection URL.</p>
+
+<p>This URL should not actually exist for a non-web application, so feel free to
+use something like <code>https://localhost/oauth</code>. It's a URL the authorization
+service will attempt redirect to, in order to provide information which will be
+used to issue an access token.</p>
+
+<p>This library will intercept the redirect and handle everything for you so you
+just get back a nice packaged up Swift object that tells you whether
+authentication succeeded or failed.</p>
+
+<p>Enough talk, how about an example?</p>
+
+<h2>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h2>
+
+<p>This is an <code>authorization_code</code> example.</p>
+
+<div class="highlight highlight-source-swift"><pre>    <span class="pl-k">let</span> request <span class="pl-k">=</span> AuthorizationCodeRequest(
+        authorizationURL: <span class="pl-s"><span class="pl-pds">"</span>https://endpoint.com/auth<span class="pl-pds">"</span></span>
+        tokenURL: <span class="pl-s"><span class="pl-pds">"</span>https://endpoint.com/token<span class="pl-pds">"</span></span>,
+        clientId: <span class="pl-s"><span class="pl-pds">"</span>YOUR-CLIENT-ID<span class="pl-pds">"</span></span>,
+        clientSecret: <span class="pl-s"><span class="pl-pds">"</span>YOUR-SECRET<span class="pl-pds">"</span></span>,
+        redirectURL: <span class="pl-s"><span class="pl-pds">"</span>https://localhost/oauth<span class="pl-pds">"</span></span>)<span class="pl-k">!</span>
+    OAuth2<span class="pl-k">.</span>authorize(request) { response <span class="pl-k">in</span>
+        <span class="pl-k">switch</span> response {
+        <span class="pl-k">case</span> <span class="pl-k">.</span>Success(<span class="pl-k">let</span> data):
+            <span class="pl-k">let</span> token <span class="pl-k">=</span> data<span class="pl-k">.</span>accessToken
+            <span class="pl-c">// Do something with token, like call an API</span>
+            <span class="pl-k">if</span> <span class="pl-k">let</span> refreshToken <span class="pl-k">=</span> data<span class="pl-k">.</span>refreshToken {
+                <span class="pl-c">// Save refresh token if provided, `OAuth2.refresh()` can be used</span>
+                <span class="pl-c">// to avoid a re-authenticate if the access token expires.</span>
+            }
+            <span class="pl-k">break</span>
+        <span class="pl-k">case</span> <span class="pl-k">.</span>Failure(<span class="pl-k">let</span> error):
+            <span class="pl-c">// Authorization failed, `error` is an ErrorType. It may be an `AuthorizationFailure`,</span>
+            <span class="pl-c">// in which case you can see exactly which known OAuth error occurred, programmatically.</span>
+            <span class="pl-c">// It may also be an `NSError`, if the `NSURLSession` data task failed.</span>
+            <span class="pl-k">break</span>
+        }
+    }</pre></div>
+
+<p>As you can see, the library uses a <code>request:completion:</code> style, never blocking
+the caller. The completion block you supply may be called on a background
+queue, so you should send any work touching UIKit to the main queue using
+something like <code>dispatch_async(dispatch_get_main_queue()) {}</code>.</p>
+
+<h2>
+<a id="more-information" class="anchor" href="#more-information" aria-hidden="true"><span class="octicon octicon-link"></span></a>More Information</h2>
+
+<p>A sample application is included in <code>OAuth2Example</code>, ready for you to test
+Google, Facebook and SoundCloud authentication. Just fill in the IDs and
+secrets for your registered application first.</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>Apache 2.0</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/bitserf/OAuth2">OAuth2</a> is maintained by <a href="https://github.com/bitserf">bitserf</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
