@@ -26,6 +26,7 @@ let redirectURL = "http://nonexistent.com/redirection"
 let clientId = "test-client-id"
 let clientSecret = "test-client-secret"
 let accessToken = "open sesame"
+let refreshToken = "ali baba"
 
 class OAuth2Tests: XCTestCase {
     override func setUp() {
@@ -82,6 +83,56 @@ class OAuth2Tests: XCTestCase {
             break
         default:
             XCTFail("expected request to fail, but was \(response) instead")
+        }
+    }
+    
+    func testRefreshTokenSuccessfulAuth() {
+        setUpURLResponse(200, url: tokenURL, body: ["access_token": accessToken].toJSONString(), headers: ["Content-Type": "application/json"])
+        
+        let request = RefreshTokenRequest(
+            tokenURL: tokenURL,
+            clientId: clientId,
+            clientSecret: clientSecret,
+            refreshToken: refreshToken)!
+        var response: Response!
+        performOAuthRequest("refresh-token-request") { finished in
+            OAuth2.refresh(request) { response = $0 }
+            finished()
+        }
+        
+        switch response! {
+        case .Success(let data):
+            XCTAssertEqual(accessToken, data.accessToken)
+            break
+        default:
+            XCTFail("expected request to succeed, but was \(response) instead")
+        }
+    }
+
+    func testRefreshTokenRejectedAuth() {
+        setUpURLResponse(400, url: tokenURL, body: ["error": "invalid_grant", "error_description":"refresh+token+expired"].toJSONString(), headers: ["Content-Type": "application/json"])
+        
+        let request = RefreshTokenRequest(
+            tokenURL: tokenURL,
+            clientId: clientId,
+            clientSecret: clientSecret,
+            refreshToken: refreshToken)!
+        var response: Response!
+        performOAuthRequest("refresh-token-request") { finished in
+            OAuth2.refresh(request) { response = $0 }
+            finished()
+        }
+        
+        switch response! {
+        case .Failure(let error):
+            switch error {
+            case AuthorizationFailure.OAuthInvalidGrant(let description):
+                XCTAssertEqual("refresh token expired", description)
+            default:
+                XCTFail("expected request to fail with OAuthInvalidGrant, but was \(error) instead")
+            }
+        default:
+            XCTFail("expected request to fail with OAuthInvalidGrant, but was \(response) instead")
         }
     }
     

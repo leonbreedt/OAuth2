@@ -100,7 +100,7 @@ public struct ErrorData {
     public static func decode(json: AnyObject) throws -> ErrorData {
         guard let dict = json as? NSDictionary else { throw ErrorDataInvalid.NotJSONObject }
         guard let error = dict["error"] as? String else { throw ErrorDataInvalid.MissingErrorField }
-        let errorDescription = dict["error_description"] as? String
+        let errorDescription = (dict["error_description"] as? String)?.urlDecodedString
         let errorURIString = dict["error_uri"] as? String
         let errorURI = errorURIString != nil ? NSURL(string: errorURIString!) : nil
         return ErrorData(error: error, errorDescription: errorDescription, errorURI: errorURI)
@@ -117,12 +117,18 @@ public struct ErrorData {
             return AuthorizationFailure.OAuthAccessDenied(description: errorDescription)
         case "unsupported_response_type":
             return AuthorizationFailure.OAuthUnsupportedResponseType(description: errorDescription)
+        case "unsupported_grant_type":
+            return AuthorizationFailure.OAuthUnsupportedGrantType(description: errorDescription)
         case "invalid_scope":
             return AuthorizationFailure.OAuthInvalidScope(description: errorDescription)
         case "server_error":
             return AuthorizationFailure.OAuthServerError(description: errorDescription)
         case "temporarily_unavailable":
             return AuthorizationFailure.OAuthTemporarilyUnavailable(description: errorDescription)
+        case "invalid_grant":
+            return AuthorizationFailure.OAuthInvalidGrant(description: errorDescription)
+        case "invalid_client":
+            return AuthorizationFailure.OAuthInvalidClient(description: errorDescription)
         default:
             return AuthorizationFailure.OAuthUnknownError(description: "Unknown error: \(errorDescription) (\(error))")
         }
@@ -179,6 +185,11 @@ public enum AuthorizationFailure : ErrorType {
     /// - Parameters:
     ///   - description: The contents of the `error_description` parameter returned by the server, if available.
     case OAuthUnsupportedResponseType(description: String?)
+
+    /// Represents the OAuth 2.0 protocol error `unsupported_grant_type`.
+    /// - Parameters:
+    ///   - description: The contents of the `error_description` parameter returned by the server, if available.
+    case OAuthUnsupportedGrantType(description: String?)
     
     /// Represents the OAuth 2.0 protocol error `invalid_scope`.
     /// - Parameters:
@@ -194,6 +205,16 @@ public enum AuthorizationFailure : ErrorType {
     /// - Parameters:
     ///   - description: The contents of the `error_description` parameter returned by the server, if available.
     case OAuthTemporarilyUnavailable(description: String?)
+    
+    /// Represents the OAuth 2.0 protocol error `invalid_grant`.
+    /// - Parameters:
+    ///   - description: The contents of the `error_description` parameter returned by the server, if available.
+    case OAuthInvalidGrant(description: String?)
+
+    /// Represents the OAuth 2.0 protocol error `invalid_client`.
+    /// - Parameters:
+    ///   - description: The contents of the `error_description` parameter returned by the server, if available.
+    case OAuthInvalidClient(description: String?)
     
     /// Server returned a string in the `error` parameter that is not listed in the OAuth RFC.
     /// - Parameters:

@@ -72,6 +72,22 @@ public class OAuth2 {
         }
     }
     
+    /// Performs an OAuth `refresh_token` flow, calling a completion handler when the request
+    /// has finished. No user interaction is required for this flow.
+    /// - Parameters:
+    ///   - request: The refresh token request to perform.
+    ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
+    ///                 (successfully or not). The caller must not make any assumptions about
+    ///                 which dispatch queue the completion will be called on.
+    public static func refresh(
+        request: RefreshTokenRequest,
+        completion: AuthorizationCompletionHandler)
+    {
+        urlRequestHook(request.tokenRequest()) { data, urlResponse, error in
+            processAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
+        }
+    }
+    
     /// Performs an OAuth `client_credentials` flow, calling a completion handler when the
     /// request has finished. No user interaction is required for this flow.
     /// - Parameters:

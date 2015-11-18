@@ -139,6 +139,97 @@ public struct AuthorizationCodeRequest {
     }
 }
 
+/// Represents an OAuth 2.0 `refresh_token` request. This is a two-legged flow.
+public struct RefreshTokenRequest {
+    /// The URL of the token issuing endpoint.
+    public let tokenURL: NSURL
+    /// The client ID for your application, provided by the target service.
+    public let clientId: String
+    /// The client secret for your application, provided by the target service.
+    public let clientSecret: String
+    /// The refresh token that was issued by the authorization service, when initial authorization succeeded.
+    public let refreshToken: String
+    /// The scope of permissions to request. May be omitted, depending on the service.
+    public let scope: String?
+    /// Whether or not to use the `Authorization` HTTP header for transmitting the
+    /// client ID and secret to the server. If `false`, they will be transmitted to
+    /// the server using `client_id` and `client_secret` HTTP POST parameters instead,
+    /// as per the RFC.
+    public let useAuthorizationHeader: Bool
+    
+    /// Initializes a `refresh_token` request.
+    /// - Parameters:
+    ///   - tokenURL: The URL of the token issuing endpoint.
+    ///   - clientId: The client ID for your application, provided by the target service.
+    ///   - clientSecret: The client secret for your application, provided by the target service.
+    ///   - scope: The scope of permissions to request. May be omitted, depending on the service. May not
+    ///            request new scopes that weren't requested in the initial authorization request.
+    /// - Returns: `nil` if the `tokenURL` parameter is not a valid URL.
+    public init?(
+        tokenURL tokenURLString: String,
+        clientId: String,
+        clientSecret: String,
+        refreshToken: String,
+        scope: String? = nil,
+        useAuthorizationHeader: Bool = false)
+    {
+        if let tokenURL = NSURL(string: tokenURLString) {
+            self.init(
+                tokenURL: tokenURL,
+                clientId: clientId,
+                clientSecret: clientSecret,
+                refreshToken: refreshToken,
+                scope: scope,
+                useAuthorizationHeader: useAuthorizationHeader)
+        } else {
+            return nil
+        }
+    }
+    
+    /// Initializes a `refresh_token` request.
+    /// - Parameters:
+    ///   - tokenURL: The URL of the token issuing endpoint.
+    ///   - clientId: The client ID for your application, provided by the target service.
+    ///   - clientSecret: The client secret for your application, provided by the target service.
+    ///   - scope: The scope of permissions to request. May be omitted, depending on the service. May not
+    ///            request new scopes that weren't requested in the initial authorization request.
+    public init(
+        tokenURL: NSURL,
+        clientId: String,
+        clientSecret: String,
+        refreshToken: String,
+        scope: String? = nil,
+        useAuthorizationHeader: Bool = false)
+    {
+        self.tokenURL = tokenURL
+        self.clientId = clientId
+        self.clientSecret = clientSecret
+        self.refreshToken = refreshToken
+        self.scope = scope
+        self.useAuthorizationHeader = useAuthorizationHeader
+    }
+    
+    /// Creates a `NSURLRequest` that can be used to obtain an access token for an issued refresh token.
+    func tokenRequest() -> NSURLRequest {
+        var headers: [String: String] = [:]
+        var parameters = [
+            "grant_type" : "refresh_token",
+            "refresh_token" : refreshToken
+        ]
+        if scope !=  nil {
+            parameters["scope"] = scope!
+        }
+        if useAuthorizationHeader {
+            let credentials = "\(clientId):\(clientSecret)".base64String!
+            headers["Authorization"] = "Basic \(credentials)"
+        } else {
+            parameters["client_id"] = clientId
+            parameters["client_secret"] = clientSecret
+        }
+        return buildURLRequest(tokenURL, formParameters: parameters, headers: headers, method: "POST")!
+    }
+}
+
 /// Represents an OAuth 2.0 `client_credentials` request. This is a two-legged flow.
 public struct ClientCredentialsRequest {
     /// The URL of the authorization endpoint.
