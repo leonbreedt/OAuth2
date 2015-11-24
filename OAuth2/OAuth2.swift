@@ -19,34 +19,39 @@
 public typealias AuthorizationCompletionHandler = Response -> Void
 
 /// Responsible for creating a web view controller.
-public typealias CreateWebViewController = (NSURLRequest, NSURL, WebViewCompletionHandler) -> WebViewControllerType
+public typealias CreateWebViewController =
+    (NSURLRequest, NSURL, WebViewCompletionHandler) -> WebViewControllerType
 
 /// The entry point into performing OAuth requests in this framework.
 public class OAuth2 {
-    /// Performs an OAuth `authorization_code` flow, calling the completion handler when the request is finished.
+    /// Performs an OAuth `authorization_code` flow, calling the completion handler
+    /// when the request is finished.
     /// Will present a modal web view controller through which the user will log in to the target service.
-    /// This view controller will be dismissed when the user clicks cancel, authentication succeeds or authentication fails.
+    /// This view controller will be dismissed when the user clicks cancel, authentication succeeds or
+    /// authentication fails.
     /// - Parameters:
     ///   - request: The authorization request to perform.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). The caller must not make any assumptions about
     ///                 which dispatch queue the completion will be called on.
-    ///   - createWebViewController: If not `nil`, a function to call to create a `WebViewControllerType` to perform
-    ///                              the user interaction. The default implementation uses `WKWebView` to perform the user
-    ///                              interaction. The object returned must be either a `UIViewController` (iOS) or 
-    ///                              `NSViewController` (OS X). This can also be supplied if the caller wants to customize
-    ///                              the presentation of this view controller, via _transitioning delegates_, for example.
-    public static func authorize(
-        request: AuthorizationCodeRequest,
-        createWebViewController: CreateWebViewController? = nil,
-        completion: AuthorizationCompletionHandler)
-    {
+    ///   - createWebViewController: If not `nil`, a function to call to create a `WebViewControllerType`
+    ///                              to perform the user interaction. The default implementation
+    ///                              uses `WKWebView` to perform the user interaction. The
+    ///                              object returned must be either a `UIViewController` (iOS) or
+    ///                              `NSViewController` (OS X). This can also be supplied if
+    ///                              the caller wants to customize the presentation of this view
+    ///                              controller, via _transitioning delegates_, for example.
+    public static func authorize(request: AuthorizationCodeRequest,
+                                 createWebViewController: CreateWebViewController? = nil,
+                                 completion: AuthorizationCompletionHandler) {
         var createController: CreateWebViewController = createDefaultWebViewController
         if createWebViewController != nil {
             createController = createWebViewController!
         }
-        
-        webViewRequestHook(request.authorizationRequest(), redirectionURL: request.redirectURL, createWebViewController: createController) { response in
+
+        webViewRequestHook(request.authorizationRequest(),
+                           redirectionURL: request.redirectURL,
+                           createWebViewController: createController) { response in
             switch response {
             case .LoadError(let error):
                 completion(.Failure(failure: error))
@@ -55,23 +60,28 @@ public class OAuth2 {
                 let queryParameters = redirectionURL.queryParameters
                 if let code = queryParameters["code"] {
                     urlRequestHook(request.tokenRequest(code)) { data, urlResponse, error in
-                        processAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
+                        processAuthorizationDataResponse(data,
+                                                         urlResponse: urlResponse,
+                                                         error: error,
+                                                         completion: completion)
                     }
                 } else if let error = queryParameters["error"] {
-                    let failure = ErrorData(error: error, errorDescription: queryParameters["error_description"]?.urlDecodedString, errorURI: nil)
+                    let description = queryParameters["error_description"]?.urlDecodedString
+                    let failure = ErrorData(error: error, errorDescription: description, errorURI: nil)
                     completion(.Failure(failure: failure.asAuthorizationFailure()))
                 } else {
                     completion(.Failure(failure: AuthorizationFailure.MissingParametersInRedirectionURI))
                 }
                 break
-            case .ResponseError(let httpResponse):
-                logResponse(httpResponse, bodyData: nil)
-                completion(.Failure(failure: AuthorizationFailure.UnexpectedServerResponse(response: httpResponse)))
+            case .ResponseError(let response):
+                logResponse(response, bodyData: nil)
+                let failure = AuthorizationFailure.UnexpectedServerResponse(response: response)
+                completion(.Failure(failure: failure))
                 break
             }
         }
     }
-    
+
     /// Performs an OAuth `refresh_token` flow, calling a completion handler when the request
     /// has finished. No user interaction is required for this flow.
     /// - Parameters:
@@ -79,173 +89,167 @@ public class OAuth2 {
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
     ///                 (successfully or not). The caller must not make any assumptions about
     ///                 which dispatch queue the completion will be called on.
-    public static func refresh(
-        request: RefreshTokenRequest,
-        completion: AuthorizationCompletionHandler)
-    {
+    public static func refresh(request: RefreshTokenRequest,
+                               completion: AuthorizationCompletionHandler) {
         urlRequestHook(request.tokenRequest()) { data, urlResponse, error in
-            processAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
+            processAuthorizationDataResponse(data,
+                                             urlResponse: urlResponse,
+                                             error: error,
+                                             completion: completion)
         }
     }
-    
+
     /// Performs an OAuth `client_credentials` flow, calling a completion handler when the
     /// request has finished. No user interaction is required for this flow.
     /// - Parameters:
     ///   - request: The authorization request to perform.
     ///   - completion: The `AuthorizationCompletionHandler` to call when the request has completed
-    ///                 (successfully or not). The caller must not make any assumptions about 
+    ///                 (successfully or not). The caller must not make any assumptions about
     ///                 which dispatch queue the completion will be called on.
-    public static func authorize(
-        request: ClientCredentialsRequest,
-        completion: AuthorizationCompletionHandler)
-    {
+    public static func authorize(request: ClientCredentialsRequest,
+                                 completion: AuthorizationCompletionHandler) {
         urlRequestHook(request.authorizationRequest()) { data, urlResponse, error in
-            processAuthorizationDataResponse(data, urlResponse: urlResponse, error: error, completion: completion)
+            processAuthorizationDataResponse(data,
+                                             urlResponse: urlResponse,
+                                             error: error,
+                                             completion: completion)
         }
     }
-    
+
     /// Whether or not HTTP requests and responses will be logged.
     public static var loggingEnabled: Bool = false
-    
+
     // MARK: - Internal test hooks
-    
+
     typealias URLRequestCompletionHandler = (NSData?, NSURLResponse?, ErrorType?) -> Void
     typealias URLRequestHookType = (NSURLRequest, completionHandler: URLRequestCompletionHandler) -> Void
-    typealias WebViewRequestHookType = (NSURLRequest, redirectionURL: NSURL, createWebViewController: CreateWebViewController, completionHandler: WebViewCompletionHandler) -> Void
-    
+    typealias WebViewRequestHookType =
+        (NSURLRequest, redirectionURL: NSURL, createWebViewController: CreateWebViewController,
+         completionHandler: WebViewCompletionHandler) -> Void
+
     static var urlRequestHook: URLRequestHookType = OAuth2.executeURLRequest
     static var webViewRequestHook: WebViewRequestHookType = OAuth2.executeWebViewRequest
-    
+
     // MARK: - Private
-    
+
     private init() {
     }
-    
-    private static func executeURLRequest(request: NSURLRequest, completionHandler: URLRequestCompletionHandler) {
+
+    private static func executeURLRequest(request: NSURLRequest,
+                                          completionHandler: URLRequestCompletionHandler) {
         logRequest(request)
-        
+
         let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
         let session = NSURLSession(configuration: configuration)
-        
+
         let task = session.dataTaskWithRequest(request) { data, response, error in
             logResponse(response as? NSHTTPURLResponse, bodyData: data)
-            
             completionHandler(data, response, error)
         }
         task.resume()
     }
-    
-    private static func executeWebViewRequest(request: NSURLRequest, redirectionURL: NSURL, createWebViewController: CreateWebViewController, completionHandler: WebViewCompletionHandler) {
+
+    private static func executeWebViewRequest(request: NSURLRequest,
+                                              redirectionURL: NSURL,
+                                              createWebViewController: CreateWebViewController,
+                                              completionHandler: WebViewCompletionHandler) {
         dispatch_async(dispatch_get_main_queue()) {
             logRequest(request)
-            
+
             var controller: WebViewControllerType!
-            
+
             controller = createWebViewController(request, redirectionURL) { response in
                 controller.dismiss()
                 completionHandler(response)
                 controller = nil
             }
-            
+
             controller.present()
         }
     }
 
-    private static func createDefaultWebViewController(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) -> WebViewControllerType {
+    private static func createDefaultWebViewController(
+        request: NSURLRequest,
+        redirectionURL: NSURL,
+        completionHandler: WebViewCompletionHandler) -> WebViewControllerType {
 #if os(iOS)
-        return WebViewController(request: request, redirectionURL: redirectionURL, completionHandler: completionHandler)
+        return WebViewController(request: request,
+                                 redirectionURL: redirectionURL,
+                                 completionHandler: completionHandler)
 #elseif os(OSX)
-        return WebViewController(request: request, redirectionURL: redirectionURL, completionHandler: completionHandler)!
+        return WebViewController(request: request,
+                                 redirectionURL: redirectionURL,
+                                 completionHandler: completionHandler)!
 #endif
     }
-    
-    private static func processAuthorizationDataResponse(data: NSData?, urlResponse: NSURLResponse?, error: ErrorType?, completion: AuthorizationCompletionHandler) {
+
+    private static func processAuthorizationDataResponse(data: NSData?,
+                                                         urlResponse: NSURLResponse?,
+                                                         error: ErrorType?,
+                                                         completion: AuthorizationCompletionHandler) {
         if error != nil {
             completion(.Failure(failure: error!))
             return
         }
-
-        assert(urlResponse is NSHTTPURLResponse)
-        
-        var responseIsServerRejectionError = false
-        
-        let httpResponse = urlResponse as! NSHTTPURLResponse
-        switch httpResponse.statusCode {
-        case 200:
-            // Either this is a `client_credentials` response containing the JSON, or this is a `authorization_code` response
-            // containing the JSON. Ok to proceed.
-            break
-        case 400:
-            // This is a `client_credentials` response (`authorization_code` would have communicated the error via a redirect).
-            // Bail out.
-            responseIsServerRejectionError = true
-            break
-        default:
-            // Unexpected server response, bail out and supply response to caller for further diagnostics.
-            completion(.Failure(failure: AuthorizationFailure.UnexpectedServerResponse(response: httpResponse)))
+        guard let response = urlResponse as? NSHTTPURLResponse else {
+            fatalError("unsupported response type: \(urlResponse)")
+        }
+        if response.statusCode != 400 && response.statusCode != 200 {
+            let failure = AuthorizationFailure.UnexpectedServerResponse(response: response)
+            completion(.Failure(failure: failure))
             return
         }
-        
-        guard let data = data else {
-            completion(.Failure(failure: AuthorizationDataInvalid.Empty))
-            return
-        }
-        
-        guard let utf8String = NSString(data: data, encoding: NSUTF8StringEncoding) as? String else {
+        let header = (response.allHeaderFields["Content-Type"] as? String) ?? "application/octet-stream"
+        let (mimeType, encoding) = header.parseAsHTTPContentTypeHeader()
+        guard let data = data, let str = NSString(data: data, encoding: encoding) as? String else {
             completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
             return
         }
 
-        var contentType: String = "application/octet-stream"
-        if let contentTypeHeader = httpResponse.allHeaderFields["Content-Type"] as? String {
-            let (type, _) = contentTypeHeader.parseAsHTTPContentTypeHeader()
-            contentType = type
-        }
-
         do {
-            var object: AnyObject?
-            if contentType == "application/json" || contentType == "text/json" || contentType == "text/x-json" {
-                object = try utf8String.parseAsJSONObject()
+            let object: AnyObject?
+            if mimeType == "application/json" || mimeType == "text/json" || mimeType == "text/x-json" {
+                object = try str.parseAsJSONObject()
             } else {
-                // Backends like Facebook may give us non-RFC-complaint form data response as plain text. Accomodate this.
-                object = utf8String.parseAsURLEncodedFormData()
+                object = str.parseAsURLEncodedFormData()
             }
-            
-            if responseIsServerRejectionError {
-                if object == nil {
-                    completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
-                    return
-                }
-                do {
-                    let errorData = try ErrorData.decode(object!)
-                    completion(.Failure(failure: errorData.asAuthorizationFailure()))
-                } catch let error {
-                    completion(.Failure(failure: error))
-                }
+            if object == nil {
+                completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
+                return
+            }
+            if response.statusCode == 400 {
+                completion(decodeErrorData(object!))
             } else {
-                if object == nil {
-                    completion(.Failure(failure: ErrorDataInvalid.NotUTF8))
-                    return
-                }
-                
-                do {
-                    let authData = try AuthorizationData.decode(object!)
-                    completion(.Success(data: authData))
-                } catch let error {
-                    completion(.Failure(failure: error))
-                }
+                completion(decodeAuthorizationData(object!))
             }
-        }
-        catch let parseError {
+        } catch let parseError {
             completion(.Failure(failure: AuthorizationDataInvalid.MalformedJSON(error: parseError)))
         }
     }
-    
+
+    private static func decodeAuthorizationData(object: AnyObject) -> Response {
+        do {
+            let authData = try AuthorizationData.decode(object)
+            return .Success(data: authData)
+        } catch let error {
+            return .Failure(failure: error)
+        }
+    }
+
+    private static func decodeErrorData(object: AnyObject) -> Response {
+        do {
+            let errorData = try ErrorData.decode(object)
+            return .Failure(failure: errorData.asAuthorizationFailure())
+        } catch let error {
+            return .Failure(failure: error)
+        }
+    }
+
     private static func logRequest(urlRequest: NSURLRequest) {
         if !loggingEnabled { return }
         print(urlRequest.dumpHeadersAndBody())
     }
-    
+
     private static func logResponse(urlResponse: NSHTTPURLResponse?, bodyData: NSData?) {
         if !loggingEnabled { return }
         print(urlResponse?.dumpHeadersAndBody(bodyData))

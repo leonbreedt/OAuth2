@@ -20,7 +20,9 @@ import Foundation
 extension NSHTTPURLResponse {
     func dumpHeadersAndBody(bodyData: NSData?) -> String {
         let statusCode = self.statusCode ?? 0
+        // swiftlint:disable line_length
         var result = "HTTP \(statusCode ?? 0) \(NSHTTPURLResponse.localizedStringForStatusCode(statusCode))\n"
+        // swiftlint:enable line_length
         for (name, value) in allHeaderFields {
             result += "\(name): \(value)\n"
         }

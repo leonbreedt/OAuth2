@@ -35,11 +35,12 @@ public enum WebViewResponse {
     ///   - error: The error that occurred while loading.
     case LoadError(error: ErrorType)
 
-    /// An error occurred while attempting to load the request, and the HTTP response is available for further consultation.
+    /// An error occurred while attempting to load the request, and the
+    /// HTTP response is available for further consultation.
     /// - Parameters:
     ///   - response: The HTTP response that can be consulted to attempt to determine the root cause.
     case ResponseError(response: NSHTTPURLResponse)
-    
+
     /// Completed, and a redirect was performed.
     /// - Parameters:
     ///   - redirectionURL: The full URL (with any query parameters) that the server redirected to.
@@ -57,12 +58,12 @@ public protocol WebViewControllerType {
     func dismiss()
 }
 
-/// Controller for displaying a web view, performing an `NSURLRequest` inside it, 
+/// Controller for displaying a web view, performing an `NSURLRequest` inside it,
 /// and intercepting redirects to a well-known URL.
 public class WebViewController: ControllerType, WKNavigationDelegate, WebViewControllerType {
     public typealias Element = WebViewController
-    weak var webView: WKWebView!
-    
+    private weak var webView: WKWebView!
+
     let request: NSURLRequest!
     let redirectionURL: NSURL!
     let completionHandler: WebViewCompletionHandler!
@@ -71,9 +72,12 @@ public class WebViewController: ControllerType, WKNavigationDelegate, WebViewCon
     /// Creates a new `WebViewController` for an `NSURLRequest` and a given redirection URL.
     /// - Parameters:
     ///   - request: The URL request that will be loaded when `loadRequest` is called.
-    ///   - redirectionURL: The redirection URL which will trigger a completion if the server attempts to redirect to it.
+    ///   - redirectionURL: The redirection URL which will trigger a completion if the
+    ///                     server attempts to redirect to it.
     ///   - completionHandler: The handler to call when the request completes (successfully or otherwise).
-    public required init(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) {
+    public required init(request: NSURLRequest,
+                         redirectionURL: NSURL,
+                         completionHandler: WebViewCompletionHandler) {
         self.request = request
         self.redirectionURL = redirectionURL
         self.completionHandler = completionHandler
@@ -83,9 +87,12 @@ public class WebViewController: ControllerType, WKNavigationDelegate, WebViewCon
     /// Creates a new `WebViewController` for an `NSURLRequest` and a given redirection URL.
     /// - Parameters:
     ///   - request: The URL request that will be loaded when `loadRequest` is called.
-    ///   - redirectionURL: The redirection URL which will trigger a completion if the server attempts to redirect to it.
+    ///   - redirectionURL: The redirection URL which will trigger a completion if the
+    ///                     server attempts to redirect to it.
     ///   - completionHandler: The handler to call when the request completes (successfully or otherwise).
-    public init?(request: NSURLRequest, redirectionURL: NSURL, completionHandler: WebViewCompletionHandler) {
+    public init?(request: NSURLRequest,
+                 redirectionURL: NSURL,
+                 completionHandler: WebViewCompletionHandler) {
         self.request = request
         self.redirectionURL = redirectionURL
         self.completionHandler = completionHandler
@@ -97,108 +104,139 @@ public class WebViewController: ControllerType, WKNavigationDelegate, WebViewCon
     public required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) is not supported for WebViewController")
     }
-    
+
     /// Loads the web view's `NSURLRequest`, invoking `completionHandler` when a redirection attempt
     /// to the `redirectionURL` is made.
     public func present() {
         dispatch_async(dispatch_get_main_queue()) {
             #if os(iOS)
             let navigationController = UINavigationController(rootViewController: self)
-            if let delegate = UIApplication.sharedApplication().delegate,
-               let window = delegate.window,
-               let rootViewController = window?.rootViewController
-            {
-                rootViewController.presentViewController(navigationController, animated: true, completion: nil)
+            if let delegate = UIApplication.sharedApplication().delegate, let window = delegate.window,
+               let rootViewController = window?.rootViewController {
+                rootViewController.presentViewController(navigationController,
+                                                         animated: true,
+                                                         completion: nil)
             } else {
                 fatalError("unable to find root view controller")
             }
             self.loadViewIfNeeded()
             #elseif os(OSX)
-            // TODO: Implement
+            fatalError("OS X support not implemented yet for web view controllers")
             #endif
             self.webView.loadRequest(self.request)
         }
     }
-    
+
     /// Dismisses the view controller.
     public func dismiss() {
         dispatch_async(dispatch_get_main_queue()) {
             #if os(iOS)
             self.dismissViewControllerAnimated(true, completion: nil)
             #elseif os(OSX)
-                // TODO: Implement
+            fatalError("OS X support not implemented yet for web view controllers")
             #endif
         }
     }
-    
+
     // MARK: - UIViewController
-    
+
     public override func loadView() {
         super.loadView()
 
 #if os(iOS)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Cancel, target: self, action: "dismissAndCancel")
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Cancel,
+                                                            target: self,
+                                                            action: "dismissAndCancel")
 #endif
-        
+
         let webView = WKWebView(frame: CGRectZero, configuration: WKWebViewConfiguration())
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.addObserver(self, forKeyPath: "title", options: .New, context: &titleObservation)
         view.addSubview(webView)
-        let heightConstraint = NSLayoutConstraint(item: webView, attribute: .Height, relatedBy: .Equal, toItem: view, attribute: .Height, multiplier: 1, constant: 0)
-        let widthConstraint = NSLayoutConstraint(item: webView, attribute: .Width, relatedBy: .Equal, toItem: view, attribute: .Width, multiplier: 1, constant: 0)
+        let heightConstraint = NSLayoutConstraint(item: webView,
+                                                  attribute: .Height,
+                                                  relatedBy: .Equal,
+                                                  toItem: view,
+                                                  attribute: .Height,
+                                                  multiplier: 1,
+                                                  constant: 0)
+        let widthConstraint = NSLayoutConstraint(item: webView,
+                                                 attribute: .Width,
+                                                 relatedBy: .Equal,
+                                                 toItem: view,
+                                                 attribute: .Width,
+                                                 multiplier: 1,
+                                                 constant: 0)
         view.addConstraints([heightConstraint, widthConstraint])
         self.webView = webView
     }
-    
+
     deinit {
         if let webView = webView {
             webView.removeObserver(self, forKeyPath: "title")
         }
     }
-    
-    public override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+
+    public override func observeValueForKeyPath(keyPath: String?,
+                                                ofObject object: AnyObject?,
+                                                change: [String : AnyObject]?,
+                                                context: UnsafeMutablePointer<Void>) {
         if context == &titleObservation {
             if let newTitle = change?[NSKeyValueChangeNewKey] as? String {
                 title = newTitle
             }
         }
     }
-    
+
     // MARK: - WKNavigationDelegate
-    
-    public func webView(webView: WKWebView, decidePolicyForNavigationAction navigationAction: WKNavigationAction, decisionHandler: (WKNavigationActionPolicy) -> Void) {
-        if let targetURL = navigationAction.request.URL {
-            if targetURL.absoluteString.lowercaseString.hasPrefix(redirectionURL.absoluteString.lowercaseString) {
-                completionHandler(.Redirection(redirectionURL: targetURL))
-                decisionHandler(.Cancel)
-                return
-            }
+
+    public func webView(webView: WKWebView,
+                        decidePolicyForNavigationAction navigationAction: WKNavigationAction,
+                        decisionHandler: WKNavigationActionPolicy -> Void) {
+        if isRedirectionAttempt(navigationAction.request.URL) {
+            completionHandler(.Redirection(redirectionURL: navigationAction.request.URL!))
+            decisionHandler(.Cancel)
+            return
+        } else {
+            decisionHandler(.Allow)
+        }
+    }
+
+    public func webView(webView: WKWebView,
+                        decidePolicyForNavigationResponse navigationResponse: WKNavigationResponse,
+                        decisionHandler: WKNavigationResponsePolicy -> Void) {
+        if let response = navigationResponse.response as? NSHTTPURLResponse where response.statusCode != 200 {
+            // Probably, something is bad with the request, server did not like it.
+            // Forward the details on so someone else can do something meaningful with it.
+            completionHandler(.ResponseError(response: response))
+            decisionHandler(.Cancel)
+            return
         }
         decisionHandler(.Allow)
     }
-    
-    public func webView(webView: WKWebView, decidePolicyForNavigationResponse navigationResponse: WKNavigationResponse, decisionHandler: (WKNavigationResponsePolicy) -> Void) {
-        if let httpResponse = navigationResponse.response as? NSHTTPURLResponse {
-            if httpResponse.statusCode != 200 {
-                // Probably, something is bad with the request, server did not like it.
-                // Forward the details on so someone else can do something meaningful with it.
-                completionHandler(.ResponseError(response: httpResponse))
-                decisionHandler(.Cancel)
-                return
-            }
-        }
-        decisionHandler(.Allow)
-    }
-    
-    public func webView(webView: WKWebView, didFailNavigation navigation: WKNavigation!, withError error: NSError) {
+
+    public func webView(webView: WKWebView,
+                        didFailNavigation navigation: WKNavigation!,
+                        withError error: NSError) {
         completionHandler(.LoadError(error: error))
     }
-    
+
     // MARK: - Actions
-    
+
     public func dismissAndCancel() {
         dismiss()
-        completionHandler(.LoadError(error: AuthorizationFailure.OAuthAccessDenied(description: "User canceled authentication")))
+        let error = AuthorizationFailure.OAuthAccessDenied(description: "User canceled authentication")
+        completionHandler(.LoadError(error: error))
+    }
+
+    // MARK: - Private
+
+    func isRedirectionAttempt(targetURL: NSURL?) -> Bool {
+        guard let targetURL = targetURL else { return false }
+        guard let redirectionURL = redirectionURL else { return false }
+        let targetURLString = targetURL.absoluteString.lowercaseString
+        let redirectionURLString = redirectionURL.absoluteString.lowercaseString
+        return targetURLString.hasPrefix(redirectionURLString)
     }
 }

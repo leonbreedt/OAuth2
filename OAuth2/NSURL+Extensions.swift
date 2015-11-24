@@ -19,7 +19,7 @@ import Foundation
 
 extension NSURL {
     /// Returns a dictionary of the query parameters of this URL.
-    var queryParameters : [String: String] {
+    var queryParameters: [String: String] {
         let components = NSURLComponents(string: absoluteString)
         return components?
             .queryItems?

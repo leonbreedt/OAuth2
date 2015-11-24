@@ -37,32 +37,31 @@ public struct AuthorizationCodeRequest {
     /// An opaque string which will be round-tripped (added as a parameter in redirections)
     /// during the authorization flow.
     public let state: String?
-    
+
     /// Initializes a `authorization_code` request.
     /// - Parameters:
     ///   - authorizationURL: The URL of the authorization endpoint.
     ///   - tokenURL: The URL of the token issuing endpoint.
     ///   - clientId: The client ID for your application, provided by the target service.
     ///   - clientSecret: The client secret for your application, provided by the target service.
-    ///   - redirectURL: The redirect URL configured for your application on the target service. This does not have
-    ///                  to be a live Internet URL, this library will intercept the redirect and process it to
-    ///                  complete the authorization.
+    ///   - redirectURL: The redirect URL configured for your application on the target service.
+    ///                  This does not have to be a live Internet URL, this library will
+    ///                  intercept the redirect and process it to complete the authorization.
     ///   - scope: The scope of permissions to request. May be omitted, depending on the service.
     ///   - state: An opaque string which will be round-tripped (added as a parameter in redirections)
     ///            during the authorization.
     /// - Returns: `nil` if either the `authorizationURL` or `tokenURL` parameters are not valid URLs.
     public init?(authorizationURL authorizationURLString: String,
-        tokenURL tokenURLString: String,
-        clientId: String,
-        clientSecret: String,
-        redirectURL: String,
-        scope: String? = nil,
-        state: String? = nil)
-    {
-        if let authorizationURL = NSURL(string: authorizationURLString),
-           let tokenURL = NSURL(string: tokenURLString),
-           let redirectURL = NSURL(string: redirectURL)
-        {
+                 tokenURL tokenURLString: String,
+                 clientId: String,
+                 clientSecret: String,
+                 redirectURL: String,
+                 scope: String? = nil,
+                 state: String? = nil) {
+        if let
+            authorizationURL = NSURL(string: authorizationURLString),
+            tokenURL = NSURL(string: tokenURLString),
+            redirectURL = NSURL(string: redirectURL) {
             self.init(
                 authorizationURL: authorizationURL,
                 tokenURL: tokenURL,
@@ -76,27 +75,26 @@ public struct AuthorizationCodeRequest {
             return nil
         }
     }
-    
+
     /// Initializes a `authorization_code` request.
     /// - Parameters:
     ///   - authorizationURL: The URL of the authorization endpoint.
     ///   - tokenURL: The URL of the token issuing endpoint.
     ///   - clientId: The client ID for your application, provided by the target service.
     ///   - clientSecret: The client secret for your application, provided by the target service.
-    ///   - redirectURL: The redirect URL configured for your application on the target service. This does not have
-    ///                  to be a live Internet URL, this library will intercept the redirect and process it to
-    ///                  complete the authorization.
+    ///   - redirectURL: The redirect URL configured for your application on the target service.
+    ///                  This does not have to be a live Internet URL, this library will
+    ///                  intercept the redirect and process it to complete the authorization.
     ///   - scope: The scope of permissions to request. May be omitted, depending on the service.
     ///   - state: An opaque string which will be round-tripped (added as a parameter in redirections)
     ///            during the authorization.
     public init(authorizationURL: NSURL,
-        tokenURL: NSURL,
-        clientId: String,
-        clientSecret: String,
-        redirectURL: NSURL,
-        scope: String? = nil,
-        state: String? = nil)
-    {
+                tokenURL: NSURL,
+                clientId: String,
+                clientSecret: String,
+                redirectURL: NSURL,
+                scope: String? = nil,
+                state: String? = nil) {
         self.authorizationURL = authorizationURL
         self.tokenURL = tokenURL
         self.clientId = clientId
@@ -105,7 +103,7 @@ public struct AuthorizationCodeRequest {
         self.redirectURL = redirectURL
         self.state = state
     }
-    
+
     /// Creates a `NSURLRequest` that can be used to obtain an authentication code, which can be
     /// exchanged for an access token.
     func authorizationRequest() -> NSURLRequest {
@@ -122,7 +120,7 @@ public struct AuthorizationCodeRequest {
         }
         return buildURLRequest(authorizationURL, queryParameters: parameters)!
     }
-    
+
     /// Creates a `NSURLRequest` that can be used to obtain an access token for an issued authentication code.
     func tokenRequest(code: String) -> NSURLRequest {
         var parameters = [
@@ -156,7 +154,7 @@ public struct RefreshTokenRequest {
     /// the server using `client_id` and `client_secret` HTTP POST parameters instead,
     /// as per the RFC.
     public let useAuthorizationHeader: Bool
-    
+
     /// Initializes a `refresh_token` request.
     /// - Parameters:
     ///   - tokenURL: The URL of the token issuing endpoint.
@@ -165,14 +163,12 @@ public struct RefreshTokenRequest {
     ///   - scope: The scope of permissions to request. May be omitted, depending on the service. May not
     ///            request new scopes that weren't requested in the initial authorization request.
     /// - Returns: `nil` if the `tokenURL` parameter is not a valid URL.
-    public init?(
-        tokenURL tokenURLString: String,
-        clientId: String,
-        clientSecret: String,
-        refreshToken: String,
-        scope: String? = nil,
-        useAuthorizationHeader: Bool = false)
-    {
+    public init?(tokenURL tokenURLString: String,
+                 clientId: String,
+                 clientSecret: String,
+                 refreshToken: String,
+                 scope: String? = nil,
+                 useAuthorizationHeader: Bool = false) {
         if let tokenURL = NSURL(string: tokenURLString) {
             self.init(
                 tokenURL: tokenURL,
@@ -185,7 +181,7 @@ public struct RefreshTokenRequest {
             return nil
         }
     }
-    
+
     /// Initializes a `refresh_token` request.
     /// - Parameters:
     ///   - tokenURL: The URL of the token issuing endpoint.
@@ -193,14 +189,12 @@ public struct RefreshTokenRequest {
     ///   - clientSecret: The client secret for your application, provided by the target service.
     ///   - scope: The scope of permissions to request. May be omitted, depending on the service. May not
     ///            request new scopes that weren't requested in the initial authorization request.
-    public init(
-        tokenURL: NSURL,
-        clientId: String,
-        clientSecret: String,
-        refreshToken: String,
-        scope: String? = nil,
-        useAuthorizationHeader: Bool = false)
-    {
+    public init(tokenURL: NSURL,
+                clientId: String,
+                clientSecret: String,
+                refreshToken: String,
+                scope: String? = nil,
+                useAuthorizationHeader: Bool = false) {
         self.tokenURL = tokenURL
         self.clientId = clientId
         self.clientSecret = clientSecret
@@ -208,7 +202,7 @@ public struct RefreshTokenRequest {
         self.scope = scope
         self.useAuthorizationHeader = useAuthorizationHeader
     }
-    
+
     /// Creates a `NSURLRequest` that can be used to obtain an access token for an issued refresh token.
     func tokenRequest() -> NSURLRequest {
         var headers: [String: String] = [:]
@@ -243,18 +237,21 @@ public struct ClientCredentialsRequest {
     /// the server using `client_id` and `client_secret` HTTP GET parameters instead,
     /// as per the RFC.
     public let useAuthorizationHeader: Bool
-    
+
     /// Initializes a `client_credentials` request.
     /// - Parameters:
     ///   - url: The URL of the authorization endpoint.
     ///   - clientId: The client ID for your application, provided by the target service.
     ///   - clientSecret: The client secret for your application, provided by the target service.
     ///   - useAuthorizationHeader: Whether or not to use the `Authorization` HTTP header for transmitting the
-    ///                             client ID and secret to the server. If `false`, they will be transmitted to
-    ///                             the server using `client_id` and `client_secret` HTTP GET parameters instead,
-    ///                             as per the RFC.
+    ///                             client ID and secret to the server. If `false`, they will be transmitted
+    ///                             to the server using `client_id` and `client_secret` HTTP GET parameters
+    ///                             instead, as per the RFC.
     /// - Returns: `nil` if the `url` parameter is not a valid URL.
-    public init?(authorizationURL: String, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
+    public init?(authorizationURL: String,
+                 clientId: String,
+                 clientSecret: String,
+                 useAuthorizationHeader: Bool = true) {
         if let authorizationURL = NSURL(string: authorizationURL) {
             self.init(authorizationURL: authorizationURL,
                       clientId: clientId,
@@ -264,23 +261,26 @@ public struct ClientCredentialsRequest {
             return nil
         }
     }
-    
+
     /// Initializes a `client_credentials` request.
     /// - Parameters:
     ///   - url: The URL of the authorization endpoint.
     ///   - clientId: The client ID for your application, provided by the target service.
     ///   - clientSecret: The client secret for your application, provided by the target service.
     ///   - useAuthorizationHeader: Whether or not to use the `Authorization` HTTP header for transmitting the
-    ///                             client ID and secret to the server. If `false`, they will be transmitted to
-    ///                             the server using `client_id` and `client_secret` HTTP GET parameters instead,
-    ///                             as per the RFC.
-    public init(authorizationURL: NSURL, clientId: String, clientSecret: String, useAuthorizationHeader: Bool = true) {
+    ///                             client ID and secret to the server. If `false`, they will be transmitted
+    ///                             to the server using `client_id` and `client_secret` HTTP GET parameters
+    ///                             instead, as per the RFC.
+    public init(authorizationURL: NSURL,
+                clientId: String,
+                clientSecret: String,
+                useAuthorizationHeader: Bool = true) {
         self.authorizationURL = authorizationURL
         self.clientId = clientId
         self.clientSecret = clientSecret
         self.useAuthorizationHeader = useAuthorizationHeader
     }
-    
+
     /// Creates a `NSURLRequest` that can be used to obtain an access token.
     func authorizationRequest() -> NSURLRequest {
         var parameters: [String : String] = [:]
@@ -309,8 +309,7 @@ private func buildURLRequest(url: NSURL,
                              queryParameters: [String: String] = [:],
                              formParameters: [String: String] = [:],
                              headers: [String: String] = [:],
-                             method: String = "GET") -> NSMutableURLRequest?
-{
+                             method: String = "GET") -> NSMutableURLRequest? {
     if let urlComponents = NSURLComponents(string: url.absoluteString) {
         var queryItems: [NSURLQueryItem] = []
         for (name, value) in queryParameters {

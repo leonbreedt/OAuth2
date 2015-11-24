@@ -24,12 +24,11 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         OAuth2.loggingEnabled = true
     }
-    
+
     // MARK: - Actions
-    
+
     @IBAction
-    func authenticateWithGoogle()
-    {
+    func authenticateWithGoogle() {
         print("authenticating with Google")
         // You need to set up the redirect URL when setting up the OAuth client in Google's developer console.
         let request = AuthorizationCodeRequest(
@@ -43,10 +42,10 @@ class ViewController: UIViewController {
     }
 
     @IBAction
-    func authenticateWithFacebook()
-    {
+    func authenticateWithFacebook() {
         print("authenticating with Facebook")
-        // You need to set up the redirect URL in your app settings in Facebook's App Console before it will work.
+        // You need to set up the redirect URL in your app settings in
+        // Facebook's App Console before it will work.
         let request = AuthorizationCodeRequest(
             authorizationURL: "https://graph.facebook.com/oauth/authorize",
             tokenURL: "https://graph.facebook.com/oauth/access_token",
@@ -55,10 +54,9 @@ class ViewController: UIViewController {
             redirectURL: "YOUR-REDIRECT-URI-HERE")!
         OAuth2.authorize(request, completion: printOAuthResponse)
     }
-    
+
     @IBAction
-    func authenticateWithSoundCloud()
-    {
+    func authenticateWithSoundCloud() {
         print("authenticating with SoundCloud")
         let request = AuthorizationCodeRequest(
             authorizationURL: "https://soundcloud.com/connect",
@@ -68,11 +66,13 @@ class ViewController: UIViewController {
             redirectURL: "http://localhost/oauth")!
         OAuth2.authorize(request, completion: printOAuthResponse)
     }
-    
+
     func printOAuthResponse(response: Response) {
         switch response {
         case .Success(let data):
+            // swiftlint:disable line_length
             print("authorization completed, access token is \(data.accessToken), expires in \(data.expiresInSeconds), refresh token is '\(data.refreshToken)'")
+            // swiftlint:enable line_length
             break
         default:
             print("authorization failed with response \(response)")
