@@ -68,13 +68,16 @@ This is an `authorization_code` example.
             // Do something with token, like call an API
             if let refreshToken = data.refreshToken {
                 // Save refresh token if provided, `OAuth2.refresh()` can be used
-                // to avoid a re-authenticate if the access token expires.
+                // to avoid a full re-authentication by the user if the access
+                // token expires.
             }
             break
         case .Failure(let error):
-            // Authorization failed, `error` is an ErrorType. It may be an `AuthorizationFailure`,
-            // in which case you can see exactly which known OAuth error occurred, programmatically.
-            // It may also be an `NSError`, if the `NSURLSession` data task failed.
+            // Authorization failed, `error` is an ErrorType. It may be an 
+            // `AuthorizationFailure`, in which case you can check which 
+            // well-known OAuth error occurred programmatically.
+            // It may also be an `NSError`, if the `NSURLSession` data task
+            // failed.
             break
         }
     }
