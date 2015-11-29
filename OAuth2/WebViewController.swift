@@ -61,8 +61,8 @@ public protocol WebViewControllerType {
 /// Controller for displaying a web view, performing an `NSURLRequest` inside it,
 /// and intercepting redirects to a well-known URL.
 public class WebViewController: ControllerType, WKNavigationDelegate, WebViewControllerType {
-    public typealias Element = WebViewController
-    private weak var webView: WKWebView!
+    /// The `WKWebView` which will be used for requests.
+    public private(set) weak var webView: WKWebView!
 
     let request: NSURLRequest!
     let redirectionURL: NSURL!
