@@ -15,6 +15,8 @@
 // limitations under the License.
 //
 
+import WebKit
+
 /// Handler called when an OAuth authorization request has completed.
 public typealias AuthorizationCompletionHandler = Response -> Void
 
@@ -119,6 +121,23 @@ public class OAuth2 {
     /// Whether or not HTTP requests and responses will be logged.
     public static var loggingEnabled: Bool = false
 
+    /// If not `nil`, the `NSURLSessionConfiguration` to use when performing any direct URL
+    /// requests. Use this if you need to override details like cache policy, cookie storage, etc.
+    /// The default behavior is to use `NSURLSessionConfiguration.ephemeralSessionConfiguration()`,
+    /// which does not persist any of this information.
+    public static var urlSessionConfiguration: NSURLSessionConfiguration =
+        NSURLSessionConfiguration.ephemeralSessionConfiguration()
+
+    /// If not `nil`, the `WKWebViewConfiguration` to use for any new `WKWebView` instances
+    /// created after setting this value. Use this if you need to override the process pool
+    /// or data store used by the web view, for example. The default behaviour is to use
+    /// a new `WKWebViewConfiguration` with a non-persistent data store.
+    public static var webViewConfiguration: WKWebViewConfiguration = {
+            let configuration = WKWebViewConfiguration()
+            configuration.websiteDataStore = WKWebsiteDataStore.nonPersistentDataStore()
+            return configuration
+        }()
+
     // MARK: - Internal test hooks
 
     typealias URLRequestCompletionHandler = (NSData?, NSURLResponse?, ErrorType?) -> Void
@@ -139,8 +158,7 @@ public class OAuth2 {
                                           completionHandler: URLRequestCompletionHandler) {
         logRequest(request)
 
-        let configuration = NSURLSessionConfiguration.defaultSessionConfiguration()
-        let session = NSURLSession(configuration: configuration)
+        let session = NSURLSession(configuration: urlSessionConfiguration)
 
         let task = session.dataTaskWithRequest(request) { data, response, error in
             logResponse(response as? NSHTTPURLResponse, bodyData: data)
@@ -173,14 +191,18 @@ public class OAuth2 {
         redirectionURL: NSURL,
         completionHandler: WebViewCompletionHandler) -> WebViewControllerType {
 #if os(iOS)
-        return WebViewController(request: request,
-                                 redirectionURL: redirectionURL,
-                                 completionHandler: completionHandler)
+        let controller = WebViewController(request: request,
+                                           redirectionURL: redirectionURL,
+                                           completionHandler: completionHandler)
 #elseif os(OSX)
-        return WebViewController(request: request,
-                                 redirectionURL: redirectionURL,
-                                 completionHandler: completionHandler)!
+        let controller = WebViewController(request: request,
+                                           redirectionURL: redirectionURL,
+                                           completionHandler: completionHandler)!
 #endif
+
+        controller.webViewConfiguration = webViewConfiguration
+
+        return controller
     }
 
     private static func processAuthorizationDataResponse(data: NSData?,

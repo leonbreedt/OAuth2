@@ -56,6 +56,9 @@ public protocol WebViewControllerType {
     func present()
     /// Dismisses the controller.
     func dismiss()
+
+    /// Gets or sets the web view configuration to use, if applicable.
+    var webViewConfiguration: WKWebViewConfiguration? { get set }
 }
 
 /// Controller for displaying a web view, performing an `NSURLRequest` inside it,
@@ -63,6 +66,20 @@ public protocol WebViewControllerType {
 public class WebViewController: ControllerType, WKNavigationDelegate, WebViewControllerType {
     /// The `WKWebView` which will be used for requests.
     public private(set) weak var webView: WKWebView!
+
+    /// Gets or sets the configuration for the `WKWebView` for this controller. After the
+    /// `WKWebView` has been instantiated, always returns the configuration of web view.
+    /// Setting is ignored after the `WKWebView` has been instantiated.
+    public var webViewConfiguration: WKWebViewConfiguration? {
+        get { return webView?.configuration ?? defaultWebViewConfiguration }
+        set {
+            if webView == nil {
+                defaultWebViewConfiguration = newValue
+            }
+        }
+    }
+
+    private var defaultWebViewConfiguration: WKWebViewConfiguration?
 
     let request: NSURLRequest!
     let redirectionURL: NSURL!
@@ -149,7 +166,8 @@ public class WebViewController: ControllerType, WKNavigationDelegate, WebViewCon
                                                             action: "dismissAndCancel")
 #endif
 
-        let webView = WKWebView(frame: CGRectZero, configuration: WKWebViewConfiguration())
+        let configuration = defaultWebViewConfiguration ?? WKWebViewConfiguration()
+        let webView = WKWebView(frame: CGRectZero, configuration: configuration)
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.addObserver(self, forKeyPath: "title", options: .New, context: &titleObservation)
