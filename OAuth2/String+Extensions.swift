@@ -19,6 +19,9 @@ import Foundation
 
 extension String {
     /// Attempts to parse this string as JSON and returns the parsed object if successful.
+    /// - Throws: Throws an `NSError` describing the reason for failure if the JSON could not be parsed.
+    /// - Returns: The parsed JSON object, or `nil` if the `NSData` object could not be created from
+    ///   the string.
     func parseAsJSONObject() throws -> AnyObject? {
         if let data = dataUsingEncoding(NSUTF8StringEncoding) {
             return try NSJSONSerialization.JSONObjectWithData(data,
@@ -29,6 +32,7 @@ extension String {
 
     /// Parses this string as if it was URL encoded form data, into a dictionary of name value
     /// pairs representing each field.
+    /// - Returns: A `[String: String]` dictionary containing the name value pairs.
     func parseAsURLEncodedFormData() -> [String: String] {
         var dict: [String: String] = [:]
         for field in componentsSeparatedByString("&") {
@@ -40,6 +44,8 @@ extension String {
     }
 
     /// Parses this string as an HTTP Content-Type header.
+    /// - Returns: A `(mimeType:, encoding:)` tuple containing the parsed MIME type and
+    ///            encoding values.
     func parseAsHTTPContentTypeHeader() -> (mimeType: String, encoding: UInt) {
         let headerComponents =
             componentsSeparatedByString(";")
@@ -52,7 +58,7 @@ extension String {
             // Default according to RFC is ISO-8859-1, but probably nothing obeys that, so default
             // to UTF-8 instead.
             var encoding = NSUTF8StringEncoding
-            if let charset = parameters["charset"], let parsedEncoding = charset.parseAsStringEncoding() {
+            if let charset = parameters["charset"], parsedEncoding = charset.parseAsStringEncoding() {
                 encoding = parsedEncoding
             }
 
@@ -63,6 +69,7 @@ extension String {
     }
 
     /// Returns Cocoa encoding identifier for the encoding name in this string.
+    // swiftlint:disable cyclomatic_complexity
     func parseAsStringEncoding() -> UInt? {
         switch lowercaseString {
         case "iso-8859-1", "latin1": return NSISOLatin1StringEncoding
@@ -85,6 +92,7 @@ extension String {
             return nil
         }
     }
+    // swiftlint:enable cyclomatic_complexity
 
 
     /// Decodes a URL encoded string, as well as replacing any occurrences of `+`

@@ -39,6 +39,7 @@ public struct AuthorizationCodeRequest {
     public let state: String?
 
     /// Initializes a `authorization_code` request.
+    ///
     /// - Parameters:
     ///   - authorizationURL: The URL of the authorization endpoint.
     ///   - tokenURL: The URL of the token issuing endpoint.
@@ -50,7 +51,6 @@ public struct AuthorizationCodeRequest {
     ///   - scope: The scope of permissions to request. May be omitted, depending on the service.
     ///   - state: An opaque string which will be round-tripped (added as a parameter in redirections)
     ///            during the authorization.
-    /// - Returns: `nil` if either the `authorizationURL` or `tokenURL` parameters are not valid URLs.
     public init?(authorizationURL authorizationURLString: String,
                  tokenURL tokenURLString: String,
                  clientId: String,
@@ -106,6 +106,7 @@ public struct AuthorizationCodeRequest {
 
     /// Creates a `NSURLRequest` that can be used to obtain an authentication code, which can be
     /// exchanged for an access token.
+    /// - Returns: The created `NSURLRequest`.
     func authorizationRequest() -> NSURLRequest {
         var parameters = [
             "client_id" : clientId,
@@ -122,6 +123,8 @@ public struct AuthorizationCodeRequest {
     }
 
     /// Creates a `NSURLRequest` that can be used to obtain an access token for an issued authentication code.
+    /// - Parameter code: The authentication code issued by the OAuth server.
+    /// - Returns: The created `NSURLRequest`.
     func tokenRequest(code: String) -> NSURLRequest {
         var parameters = [
             "client_id" : clientId,
@@ -162,7 +165,6 @@ public struct RefreshTokenRequest {
     ///   - clientSecret: The client secret for your application, provided by the target service.
     ///   - scope: The scope of permissions to request. May be omitted, depending on the service. May not
     ///            request new scopes that weren't requested in the initial authorization request.
-    /// - Returns: `nil` if the `tokenURL` parameter is not a valid URL.
     public init?(tokenURL tokenURLString: String,
                  clientId: String,
                  clientSecret: String,
@@ -204,6 +206,7 @@ public struct RefreshTokenRequest {
     }
 
     /// Creates a `NSURLRequest` that can be used to obtain an access token for an issued refresh token.
+    /// - Returns: The created `NSURLRequest`.
     func tokenRequest() -> NSURLRequest {
         var headers: [String: String] = [:]
         var parameters = [
@@ -247,7 +250,6 @@ public struct ClientCredentialsRequest {
     ///                             client ID and secret to the server. If `false`, they will be transmitted
     ///                             to the server using `client_id` and `client_secret` HTTP GET parameters
     ///                             instead, as per the RFC.
-    /// - Returns: `nil` if the `url` parameter is not a valid URL.
     public init?(authorizationURL: String,
                  clientId: String,
                  clientSecret: String,
@@ -282,7 +284,8 @@ public struct ClientCredentialsRequest {
     }
 
     /// Creates a `NSURLRequest` that can be used to obtain an access token.
-    func authorizationRequest() -> NSURLRequest {
+    /// - Returns: The created `NSURLRequest`.
+func authorizationRequest() -> NSURLRequest {
         var parameters: [String : String] = [:]
         var headers: [String : String] = [:]
         parameters["grant_type"] = "client_credentials"

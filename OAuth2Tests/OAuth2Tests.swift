@@ -287,8 +287,9 @@ private extension Dictionary where Key: NSStringConvertible, Value: NSStringConv
             dict[name.nsString] = value.nsString
         }
         let options = NSJSONWritingOptions(rawValue: 0)
-        if let data = try? NSJSONSerialization.dataWithJSONObject(dict, options: options),
-           let string = NSString(data: data, encoding: NSUTF8StringEncoding) as? String {
+        if let
+            data = try? NSJSONSerialization.dataWithJSONObject(dict, options: options),
+            string = NSString(data: data, encoding: NSUTF8StringEncoding) as? String {
             return string
         }
         return ""

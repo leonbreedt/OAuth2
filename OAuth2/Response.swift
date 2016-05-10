@@ -47,6 +47,9 @@ public struct AuthorizationData {
     /// Decodes a JSON object into an `AuthorizationData` model object
     /// - Parameters:
     ///   - json: An object that was parsed from JSON.
+    /// - Throws: An `AuthorizationDataInvalid` error if the JSON is not in the format
+    ///           expected for authorization data.
+    /// - Returns: The decoded `AuthorizationData` object.
     public static func decode(json: AnyObject) throws -> AuthorizationData {
         guard let dict = json as? NSDictionary else { throw AuthorizationDataInvalid.NotJSONObject }
         guard let accessToken = dict["access_token"] as? String else {
@@ -93,6 +96,9 @@ public struct ErrorData {
     /// Decodes a JSON object into an `AuthorizationData` model object
     /// - Parameters:
     ///   - json: An object that was parsed from JSON.
+    /// - Throws: An `ErrorDataInvalid` error if the JSON is not in the format
+    ///           expected for error data.
+    /// - Returns: The decoded `ErrorData` object.
     public static func decode(json: AnyObject) throws -> ErrorData {
         guard let dict = json as? NSDictionary else { throw ErrorDataInvalid.NotJSONObject }
         guard let error = dict["error"] as? String else { throw ErrorDataInvalid.MissingErrorField }
@@ -105,6 +111,7 @@ public struct ErrorData {
     }
 
     /// Returns an `AuthorizationFailure` corresponding to the OAuth 2.0 error value in `error`.
+    // swiftlint:disable cyclomatic_complexity
     func asAuthorizationFailure() -> AuthorizationFailure {
         switch error {
         case "invalid_request":
@@ -132,6 +139,7 @@ public struct ErrorData {
             return AuthorizationFailure.OAuthUnknownError(description: message)
         }
     }
+    // swiftlint:enable cyclomatic_complexity
 }
 
 /// Enumerates the types of failures that can be encountered when attempting to parse error data JSON.

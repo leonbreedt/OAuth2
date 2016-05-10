@@ -20,7 +20,8 @@ extension Array {
     /// obtain a key and a value from an array element.
     /// - Parameters:
     ///   - transform: A function that will transform an array element of type `Element` into
-    //      a `(K, V)` tuple.
+    ///      a `(K, V)` tuple.
+    /// - Returns: The resulting dictionary.
     func toDictionary<K, V>(transform: Element -> (K, V)) -> [K: V] {
         var dict: [K: V] = [:]
         for item in self {

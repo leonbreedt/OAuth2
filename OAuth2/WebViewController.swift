@@ -118,6 +118,7 @@ public class WebViewController: ControllerType, WKNavigationDelegate, WebViewCon
 #endif
 
     /// Not supported for `WebViewController`.
+    /// - Parameter coder: The `NSCoder`.
     public required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) is not supported for WebViewController")
     }
@@ -128,8 +129,10 @@ public class WebViewController: ControllerType, WKNavigationDelegate, WebViewCon
         dispatch_async(dispatch_get_main_queue()) {
             #if os(iOS)
             let navigationController = UINavigationController(rootViewController: self)
-            if let delegate = UIApplication.sharedApplication().delegate, let window = delegate.window,
-               let rootViewController = window?.rootViewController {
+            if let
+                delegate = UIApplication.sharedApplication().delegate,
+                window = delegate.window,
+                rootViewController = window?.rootViewController {
                 rootViewController.presentViewController(navigationController,
                                                          animated: true,
                                                          completion: nil)
@@ -163,11 +166,11 @@ public class WebViewController: ControllerType, WKNavigationDelegate, WebViewCon
 #if os(iOS)
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .Cancel,
                                                             target: self,
-                                                            action: "dismissAndCancel")
+                                                            action: #selector(dismissAndCancel))
 #endif
 
         let configuration = defaultWebViewConfiguration ?? WKWebViewConfiguration()
-        let webView = WKWebView(frame: CGRectZero, configuration: configuration)
+        let webView = WKWebView(frame: CGRect.zero, configuration: configuration)
         webView.navigationDelegate = self
         webView.translatesAutoresizingMaskIntoConstraints = false
         webView.addObserver(self, forKeyPath: "title", options: .New, context: &titleObservation)

@@ -223,7 +223,7 @@ public class OAuth2 {
         }
         let header = (response.allHeaderFields["Content-Type"] as? String) ?? "application/octet-stream"
         let (mimeType, encoding) = header.parseAsHTTPContentTypeHeader()
-        guard let data = data, let str = NSString(data: data, encoding: encoding) as? String else {
+        guard let data = data, str = NSString(data: data, encoding: encoding) as? String else {
             completion(.Failure(failure: AuthorizationDataInvalid.NotUTF8))
             return
         }
